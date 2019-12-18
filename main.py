@@ -279,9 +279,9 @@ for epoch in range(init_epoch,init_epoch+num_epoch):
         loss_value += loss.item()
     loss_avg=loss_value / (len(train_data) // batch_size)
     info_loss="Train epoch {}, L1 loss {}, recon {}, reg {}".format(epoch,
-                  L1_loss/ (len(val_data) // batch_size),
-                  loss_bce / (len(val_data) // batch_size),
-                  loss_kld / (len(val_data) // batch_size))
+                  L1_loss/ (len(train_data) // batch_size),
+                  loss_bce / (len(train_data) // batch_size),
+                  loss_kld / (len(train_data) // batch_size))
     train_performances.append(info_loss)
 
 
