@@ -44,8 +44,6 @@ parser.add_argument('--initial-learning_rate', type=float, default=0.001, metava
                     help='num of training epochs (default: 0.001)')
 parser.add_argument('--model', default="lap",
                     help='lap | dirac | simple_dirac')
-parser.add_argument('--model', default="lap",
-                    help='lap | dirac | simple_dirac')
 parser.add_argument('--version', default="hpc_temp")
 parser.add_argument('--load-version', type=int, default=1000, metavar='N',
                     help="-1 don't load,0 most recent otherwise epoch")
