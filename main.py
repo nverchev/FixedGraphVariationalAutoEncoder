@@ -2,7 +2,6 @@ from models import LapVAE, DirVAE
 from util import sparse_diag_cat,process
 from losses import *
 import torch
-
 import numpy as np
 import glob
 import numpy as np
