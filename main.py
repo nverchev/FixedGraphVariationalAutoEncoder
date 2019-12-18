@@ -7,7 +7,6 @@ import glob
 import numpy as np
 import re
 import os
-import math
 from torch import optim
 
 #Change this
@@ -88,8 +87,13 @@ def load_sparse(sample):
     return sample
 
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+
 
 data=np.array([])
+path_list=[]
 for path in sorted(glob.glob("../data_vo/preproc_data/*")):
     for sample in torch.load(path):
         skip=0
@@ -98,6 +102,7 @@ for path in sorted(glob.glob("../data_vo/preproc_data/*")):
                 skip=1
         if not skip:
             data=np.hstack([data,load_sparse(sample)])
+            path_list.append(path)
 for path in sorted(glob.glob("../scratch_kyukon_vo/preproc_data/*")):
     for sample in torch.load(path):
         skip=0
@@ -106,6 +111,7 @@ for path in sorted(glob.glob("../scratch_kyukon_vo/preproc_data/*")):
                 skip=1
         if not skip:
             data=np.hstack([data,load_sparse(sample)])
+            path_list.append(path)
 for path in sorted(glob.glob("../scratch_phanpy_vo/preproc_data/*")):
     for sample in torch.load(path):
         skip=0
@@ -114,6 +120,11 @@ for path in sorted(glob.glob("../scratch_phanpy_vo/preproc_data/*")):
                 skip=1
         if not skip:
             data=np.hstack([data,load_sparse(sample)])
+            path_list.append(path)
+test_labels=[]
+for i,file in enumerate(path_list):
+    if i%10==9:
+        test_labels.append(int(file[-8:-6]))
 
 
 train_data=[]
@@ -126,10 +137,6 @@ for i,sample in enumerate(data):
         test_data.append(sample)
     else:
         train_data.append(sample)
-
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 
 
 
@@ -169,18 +176,40 @@ def sample_batch(samples,train=True):
         return inputs.to(device), None, Di.to(device), None
 
 
-mean_shape=torch.load('mean_shape.pt').to(device)
-mean_simple_Di_v=torch.load("{}/mean_simple_Di_v.pt".format(operator+'_'+version))
-mean_simple_Di_i=torch.load("{}/mean_simple_Di_i.pt".format(operator+'_'+version))
-mean_simple_Di_s=torch.load("{}/mean_simple_Di_s.pt".format(operator+'_'+version))
-mean_simple_Di=torch.sparse.FloatTensor(mean_simple_Di_i,mean_simple_Di_v,mean_simple_Di_s).cpu()
-mean_simple_Di2=sparse_diag_cat([mean_simple_Di for _ in range(batch_size)],4 * num_faces,4 * num_vertices).to(device).detach()
+mean_shape = torch.load('mean_shape.pt').to(device)
+if operator == "lap":
+    mean_L_v = torch.load("mean_L_v.pt")
+    mean_L_i = torch.load("mean_L_i.pt")
+    mean_L_s = torch.load("mean_L_s.pt")
+    mean_L = torch.sparse.FloatTensor(mean_L_i, mean_L_v, mean_L_s).cpu()
+    mean_L = sparse_diag_cat([mean_L for _ in range(batch_size)], num_vertices, num_vertices).to(device).detach()
 
+elif operator == "dirac":
+    mean_Di_v = torch.load("mean_simple_Di_v.pt")
+    mean_Di_i = torch.load("mean_simple_Di_i.pt")
+    mean_Di_s = torch.load("mean_simple_Di_s.pt")
+    mean_DiA_v = torch.load("mean_simple_DiA_v.pt")
+    mean_DiA_i = torch.load("mean_simple_DiA_i.pt")
+    mean_DiA_s = torch.load("mean_simple_DiA_s.pt")
+    mean_Di = torch.sparse.FloatTensor(mean_Di_i, mean_Di_v, mean_Di_s).cpu()
+    mean_Di = sparse_diag_cat([mean_Di for _ in range(batch_size)], 4 * num_faces, 4 * num_vertices).to(
+        device).detach()
+    mean_DiA = torch.sparse.FloatTensor(mean_DiA_i, mean_DiA_v, mean_DiA_s).cpu()
+    mean_DiA = sparse_diag_cat([mean_DiA for _ in range(batch_size)], 4 * num_faces, 4 * num_vertices).to(
+        device).detach()
+
+elif operator == "simple_dirac":
+    mean_simple_Di_v = torch.load("mean_simple_Di_v.pt")
+    mean_simple_Di_i = torch.load("mean_simple_Di_i.pt")
+    mean_simple_Di_s = torch.load("mean_simple_Di_s.pt")
+    mean_simple_Di = torch.sparse.FloatTensor(mean_simple_Di_i, mean_simple_Di_v, mean_simple_Di_s).cpu()
+    mean_simple_Di = sparse_diag_cat([mean_simple_Di for _ in range(batch_size)], 4 * num_faces, 4 * num_vertices).to(
+        device).detach()
 
 if operator == "lap":
-    model = LapVAE(num_features,num_blocks_encoder,dim_latent)
+    model = LapVAE(num_features,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent)
 else:
-    model = DirVAE(num_features,num_blocks_encoder,dim_latent)
+    model = DirVAE(num_features,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent)
 
 init_epoch=1
 train_performances=[]
@@ -290,7 +319,7 @@ for epoch in range(init_epoch,init_epoch+num_epoch):
                   loss_kld / (len(val_data) // batch_size))
     val_performances.append(info_loss)
 
-    if(epoch%100==0):
+    if(epoch%50==0):
         model.eval()
         torch.save(model.state_dict(), "{}/model_epoch{}.pt".format(operator+'_'+version,epoch))
         torch.save(optimizer.state_dict(), "{}/optimizer_epoch{}.pt".format(operator+'_'+version,epoch))
@@ -298,18 +327,57 @@ for epoch in range(init_epoch,init_epoch+num_epoch):
             file.write(str(train_performances))
         with open("{}/val_performances.txt".format(operator+'_'+version),'w') as file:
             file.write(str(val_performances))
+        minioClient.fput_object('coma', "{}/model_epoch{}.pt".format(operator+'_'+version,epoch), "{}/model_epoch{}.pt".format(operator+'_'+version,epoch))
+        minioClient.fput_object('coma', "{}/optimizer_epoch{}.pt".format(operator+'_'+version,epoch), "{}/optimizer_epoch{}.pt".format(operator+'_'+version,epoch))
+        minioClient.fput_object('coma', "{}/train_performances.txt".format(operator+'_'+version), "{}/train_performances.txt".format(operator+'_'+version))
+        minioClient.fput_object('coma', "{}/val_performances.txt".format(operator+'_'+version), "{}/val_performances.txt".format(operator+'_'+version))
 
-        try:
-            minioClient.fput_object('coma', "{}/model_epoch{}.pt".format(operator+'_'+version,epoch), "{}/model_epoch{}.pt".format(operator+'_'+version,epoch))
-            minioClient.fput_object('coma', "{}/optimizer_epoch{}.pt".format(operator+'_'+version,epoch), "{}/optimizer_epoch{}.pt".format(operator+'_'+version,epoch))
-            minioClient.fput_object('coma', "{}/train_performances.txt".format(operator+'_'+version), "{}/train_performances.txt".format(operator+'_'+version))
-            minioClient.fput_object('coma', "{}/val_performances.txt".format(operator+'_'+version), "{}/val_performances.txt".format(operator+'_'+version))
-
-
-        except ResponseError as err:
-            print(err)
+torch.cuda.empty_cache()
 
 
 
+
+import gc
+
+gc.collect()
+# @title test
+num_evaluation = 500
+L1_error = np.zeros((num_evaluation))
+euclidean_error = np.zeros((num_evaluation))
+euclidean_dist = np.zeros((num_evaluation))
+
+mus = []
+label_mus = []
+for i in range(num_evaluation):
+    sampling = np.random.choice(len(test_data), 32)
+    batch = []
+    label_batch = []
+    for s in sampling:
+        batch.append(test_data[s])
+        label_batch.append(test_labels[s])
+
+    inputs, laplacian, Di, DiA = sample_batch(batch, False)
+    if operator == "lap":
+        recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L)
+    if operator == "dirac":
+        recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, DiA, mean_shape, mean_Di, mean_DiA)
+    if operator == "simple_dirac":
+        recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, Di.transpose(1, 0), mean_shape, mean_simple_Di,
+                                                      mean_simple_Di.transpose(1, 0))
+
+    mus.append(mu.detach().cpu())
+    label_mus.append(label_batch)
+
+    euclidean_error[i], euclidean_dist[i] = euclidean(inputs, recon_mu)
+    L1_error[i] = L1_loss_function(inputs, recon_mu).item()
+print("Euclidean Mean Error= ", euclidean_dist.mean())
+print("Euclidean std Error= ", euclidean_dist.std()())
+print("Euclidean Mean %Error= ", euclidean_error.mean())
+print("Euclidean std %Error= ", euclidean_error.var())
+
+np.save('{}/mus.npy'.format(operator+'_'+version),[mu.detach().cpu().numpy() for mu in mus])
+np.save('{}/label_mus.npy'.format(operator+'_'+version),label_mus)
+np.save('{}/recon_samples.npy'.format(operator+'_'+version),recon_mu.detach().cpu())
+np.save('{}/input_samples.npy'.format(operator+'_'+version),inputs.detach().cpu())
 
 
