@@ -70,15 +70,9 @@ def load_sparse(sample):
         sample['DiA']=torch.sparse.FloatTensor(sample['DiA.ind'], sample['DiA.val'], sample['DiA.size'])
     if operator == "simple_dirac":
         sample['Di'] = torch.sparse.FloatTensor(sample['Di.ind'], sample['Di.val'], sample['Di.size'])
+    del sample['Di.ind'], sample['Di.val'], sample['Di.size']
     try:
         del sample['L.ind'], sample['L.val'], sample['L.size']
-    except:
-        pass
-    try:
-        del sample['Di.ind'], sample['Di.val'], sample['Di.size']
-    except:
-        pass
-    try:
         del sample['DiA.ind'], sample['DiA.val'], sample['DiA.size']
     except:
         pass
@@ -95,16 +89,17 @@ path_list=[]
 for path in sorted(glob.glob("../data_vo/preproc_data/*")):
     for sample in torch.load(path):
         skip=0
-        for tensor in ['V', 'F', 'L.val', 'L.ind', 'Di.val', 'Di.ind', 'DiA.val',  'DiA.ind']:
+        for tensor in [key for key in sample.keys() if not re.search("size", key)]:
             if torch.isnan(sample[tensor]).any():
                 skip=1
         if not skip:
             data=np.hstack([data,load_sparse(sample)])
             path_list.append(path)
+print(path_list)
 for path in sorted(glob.glob("../scratch_kyukon_vo/preproc_data/*")):
     for sample in torch.load(path):
         skip=0
-        for tensor in ['V', 'F', 'L.val', 'L.ind', 'Di.val', 'Di.ind', 'DiA.val',  'DiA.ind']:
+        for tensor in [key for key in sample.keys() if not re.search("size", key)]:
             if torch.isnan(sample[tensor]).any():
                 skip=1
         if not skip:
@@ -113,7 +108,7 @@ for path in sorted(glob.glob("../scratch_kyukon_vo/preproc_data/*")):
 for path in sorted(glob.glob("../scratch_phanpy_vo/preproc_data/*")):
     for sample in torch.load(path):
         skip=0
-        for tensor in ['V', 'F', 'L.val', 'L.ind', 'Di.val', 'Di.ind', 'DiA.val',  'DiA.ind']:
+        for tensor in [key for key in sample.keys() if not re.search("size", key)]:
             if torch.isnan(sample[tensor]).any():
                 skip=1
         if not skip:
@@ -173,7 +168,6 @@ def sample_batch(samples,train=True):
     if operator== "simple_dirac":
         Di = sparse_diag_cat(Di, 4 *num_faces, 4 * num_vertices)
         return inputs.to(device), None, Di.to(device), None
-
 print(2)
 
 mean_shape = torch.load('mean_shape.pt').to(device)
