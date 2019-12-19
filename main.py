@@ -81,7 +81,7 @@ def load_sparse(sample):
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-ErrorFile=[0]
+ErrorFile=[]
 with open("errors.txt", 'w') as file:
     file.write(str(ErrorFile))
 
@@ -96,7 +96,10 @@ for path in sorted(glob.glob("../data_vo/preproc_data/*")):
         if not skip:
             data=np.hstack([data,load_sparse(sample)])
             path_list.append(path)
-ErrorFile.append(1.1)
+ErrorFile=len(data)
+ErrorFile.append({tensor: data[-1][tensor].shape for tensor in data[-1].keys()})
+ErrorFile.append(path_list)
+
 with open("errors.txt", 'w') as file:
     file.write(str(ErrorFile))
 for path in sorted(glob.glob("../scratch_kyukon_vo/preproc_data/*")):
@@ -108,7 +111,9 @@ for path in sorted(glob.glob("../scratch_kyukon_vo/preproc_data/*")):
         if not skip:
             data=np.hstack([data,load_sparse(sample)])
             path_list.append(path)
-ErrorFile.append(1.2)
+ErrorFile=len(data)
+ErrorFile.append({tensor: data[-1][tensor].shape for tensor in data[-1].keys()})
+ErrorFile.append(path_list)
 with open("errors.txt", 'w') as file:
     file.write(str(ErrorFile))
 for path in sorted(glob.glob("../scratch_phanpy_vo/preproc_data/*")):
@@ -120,7 +125,6 @@ for path in sorted(glob.glob("../scratch_phanpy_vo/preproc_data/*")):
         if not skip:
             data=np.hstack([data,load_sparse(sample)])
             path_list.append(path)
-ErrorFile.append(1.3)
 with open("errors.txt", 'w') as file:
     file.write(str(ErrorFile))
 test_labels=[]
