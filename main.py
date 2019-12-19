@@ -269,7 +269,7 @@ for epoch in range(init_epoch,init_epoch+num_epoch):
         loss_bce, loss_kld = loss_bce + BCE.item(), loss_kld + KLD.item()
         L1_error=L1_loss_function(inputs,recon_mu)
         L1_loss += L1_error.item()
-        loss = L1_error+ 1/1000*KLD * min(epoch/100.0, 1)
+        loss = L1_error+ 1/1000*KLD# * min(epoch/100.0, 1)
         #loss = BCE*(1-epoch/1000) +L1_error*(epoch/1000)+ KLD * min(epoch/100.0, 1)
         optimizer.zero_grad()
         loss.backward()
@@ -308,7 +308,7 @@ for epoch in range(init_epoch,init_epoch+num_epoch):
         L1_error=L1_loss_function(inputs,recon_mu)
         L1_loss += L1_error.item()
         #loss = BCE*(1-epoch/1000) +L1_error*(epoch/1000)+ KLD * min(epoch/100.0, 1)
-        loss = L1_error+ 1/1000*KLD * min(epoch/100.0, 1)
+        loss = L1_error+ 1/1000*KLD# * min(epoch/100.0, 1)
 
     loss_avg=loss_value / (len(val_data) // batch_size)
     info_loss="Val epoch {}, L1 loss {}, recon {}, reg {}".format(epoch,
