@@ -95,7 +95,7 @@ for path in sorted(glob.glob("../data_vo/preproc_data/*")):
         if not skip:
             data=np.hstack([data,load_sparse(sample)])
             path_list.append(path)
-print(path_list)
+print(path)
 for path in sorted(glob.glob("../scratch_kyukon_vo/preproc_data/*")):
     for sample in torch.load(path):
         skip=0
@@ -105,6 +105,7 @@ for path in sorted(glob.glob("../scratch_kyukon_vo/preproc_data/*")):
         if not skip:
             data=np.hstack([data,load_sparse(sample)])
             path_list.append(path)
+print(path)
 for path in sorted(glob.glob("../scratch_phanpy_vo/preproc_data/*")):
     for sample in torch.load(path):
         skip=0
@@ -114,6 +115,8 @@ for path in sorted(glob.glob("../scratch_phanpy_vo/preproc_data/*")):
         if not skip:
             data=np.hstack([data,load_sparse(sample)])
             path_list.append(path)
+print(path)
+
 test_labels=[]
 for i,file in enumerate(path_list):
     if i%10==9:
