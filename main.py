@@ -88,7 +88,7 @@ def load_sparse(sample):
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-
+print(0)
 
 data=np.array([])
 path_list=[]
@@ -123,6 +123,7 @@ test_labels=[]
 for i,file in enumerate(path_list):
     if i%10==9:
         test_labels.append(int(file[-8:-6]))
+print(1)
 
 
 train_data=[]
@@ -173,6 +174,7 @@ def sample_batch(samples,train=True):
         Di = sparse_diag_cat(Di, 4 *num_faces, 4 * num_vertices)
         return inputs.to(device), None, Di.to(device), None
 
+print(2)
 
 mean_shape = torch.load('mean_shape.pt').to(device)
 if operator == "lap":
@@ -213,6 +215,7 @@ init_epoch=1
 train_performances=[]
 val_performances=[]
 optimizer = optim.Adam(model.parameters(), initial_learning_rate, weight_decay=weight_decay)
+print(3)
 
 try:
     os.mkdir(operator+'_'+version)
@@ -241,6 +244,7 @@ if load+1:
         print("No saved models!")
 
 
+print(4)
 
 num_params = 0
 for param in model.parameters():
@@ -282,10 +286,9 @@ for epoch in range(init_epoch,init_epoch+num_epoch):
                   loss_kld / (len(train_data) // batch_size))
     train_performances.append(info_loss)
 
+    print(5)
 
-
-   
-  # for param_group in optimizer.param_groups:
+    # for param_group in optimizer.param_groups:
   #  param_group['lr'] = initial_learning_rate*np.exp(-int(epoch/learning_factor))
 
     model.eval()
@@ -332,8 +335,7 @@ for epoch in range(init_epoch,init_epoch+num_epoch):
 
 torch.cuda.empty_cache()
 
-
-
+print(6)
 
 import gc
 
