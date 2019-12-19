@@ -82,7 +82,7 @@ def load_sparse(sample):
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 ErrorFile=[0]
-with open("../errors.txt", 'r') as file:
+with open("errors.txt", 'w') as file:
     file.write(str(ErrorFile))
 
 data=np.array([])
@@ -97,7 +97,7 @@ for path in sorted(glob.glob("../data_vo/preproc_data/*")):
             data=np.hstack([data,load_sparse(sample)])
             path_list.append(path)
 ErrorFile.append(1.1)
-with open("../errors.txt", 'r') as file:
+with open("errors.txt", 'w') as file:
     file.write(str(ErrorFile))
 for path in sorted(glob.glob("../scratch_kyukon_vo/preproc_data/*")):
     for sample in torch.load(path):
@@ -109,7 +109,7 @@ for path in sorted(glob.glob("../scratch_kyukon_vo/preproc_data/*")):
             data=np.hstack([data,load_sparse(sample)])
             path_list.append(path)
 ErrorFile.append(1.2)
-with open("../errors.txt", 'r') as file:
+with open("errors.txt", 'w') as file:
     file.write(str(ErrorFile))
 for path in sorted(glob.glob("../scratch_phanpy_vo/preproc_data/*")):
     for sample in torch.load(path):
@@ -121,7 +121,7 @@ for path in sorted(glob.glob("../scratch_phanpy_vo/preproc_data/*")):
             data=np.hstack([data,load_sparse(sample)])
             path_list.append(path)
 ErrorFile.append(1.3)
-with open("../errors.txt", 'r') as file:
+with open("errors.txt", 'w') as file:
     file.write(str(ErrorFile))
 test_labels=[]
 for i,file in enumerate(path_list):
@@ -177,7 +177,7 @@ def sample_batch(samples,train=True):
         Di = sparse_diag_cat(Di, 4 *num_faces, 4 * num_vertices)
         return inputs.to(device), None, Di.to(device), None
 ErrorFile.append(2)
-with open("../errors.txt", 'r') as file:
+with open("errors.txt", 'w') as file:
     file.write(str(ErrorFile))
 mean_shape = torch.load('mean_shape.pt').to(device)
 if operator == "lap":
@@ -219,7 +219,7 @@ train_performances=[]
 val_performances=[]
 optimizer = optim.Adam(model.parameters(), initial_learning_rate, weight_decay=weight_decay)
 ErrorFile.append(3)
-with open("../errors.txt", 'r') as file:
+with open("errors.txt", 'w') as file:
     file.write(str(ErrorFile))
 try:
     os.mkdir(operator+'_'+version)
@@ -249,7 +249,7 @@ if load+1:
 
 
 ErrorFile.append(4)
-with open("../errors.txt", 'r') as file:
+with open("errors.txt", 'w') as file:
     file.write(str(ErrorFile))
 num_params = 0
 for param in model.parameters():
@@ -292,7 +292,7 @@ for epoch in range(init_epoch,init_epoch+num_epoch):
     train_performances.append(info_loss)
 
     ErrorFile.append(5)
-    with open("../errors.txt", 'r') as file:
+    with open("errors.txt", 'w') as file:
         file.write(str(ErrorFile))
     # for param_group in optimizer.param_groups:
   #  param_group['lr'] = initial_learning_rate*np.exp(-int(epoch/learning_factor))
@@ -342,7 +342,7 @@ for epoch in range(init_epoch,init_epoch+num_epoch):
 torch.cuda.empty_cache()
 
 ErrorFile.append(6)
-with open("../errors.txt", 'r') as file:
+with open("errors.txt", 'w') as file:
     file.write(str(ErrorFile))
 import gc
 
