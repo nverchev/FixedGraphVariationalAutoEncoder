@@ -1,5 +1,5 @@
 from models import LapVAE, DirVAE
-from util import sparse_diag_cat,process
+from util import sparse_diag_cat,sp_sparse_to_pt_sparse
 from losses import *
 import torch
 import numpy as np
@@ -8,7 +8,7 @@ import numpy as np
 import re
 import os
 from torch import optim
-
+from preproc import process
 #Change this
 from minio import Minio
 from minio.error import ResponseError
@@ -77,16 +77,26 @@ for path in path_list:
 if operator=='lap':
     operator_dir='L'
 elif operator=='lap_norm':
-    operator_dir
+    operator_dir='L_norm'
+elif operator=='dirac':
+    operator_dir='Di'
+elif operator=='simple_dirac':
+    operator_dir='simple_Di'
+path_list=sorted(glob.glob("../data_vo/"+ operator_dir+"/*"))
+path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/"+ operator_dir+"/*")))
+path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/"+ operator_dir+"/*")))
 
-path_list=sorted(glob.glob("../data_vo/V/*"))
-path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/V/*")))
-path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/V/*")))
 for path in path_list:
-    for sample in np.load(path):
-        data=np.hstack([data,{'V':sample}])
+    for i, sample in enumerate(np.load(path)):
+        data[i][operator_dir]=sample
 
-
+if operator=='dirac':
+    path_list=sorted(glob.glob("../data_vo/Dia/*"))
+    path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/DiA/*")))
+    path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/DiA/*")))
+    for path in path_list:
+        for i, sample in enumerate(np.load(path)):
+            data[i]['DiA'] = sample
 
 test_labels=[]
 for i,file in enumerate(path_list):
@@ -123,12 +133,12 @@ def sample_batch(samples,train=True):
     DiA = []
     for b, ind in enumerate(indices):
         inputs[b] = samples[ind]['V']
-        laplacian.append(samples[ind]['L'])
+        laplacian.append(sp_sparse_to_pt_sparse(samples[ind]['L']))
         if operator == "dirac":
-            Di.append(samples[ind]['Di'])
-            DiA.append(samples[ind]['DiA'])
+            Di.append(sp_sparse_to_pt_sparse(samples[ind]['Di']))
+            DiA.append(sp_sparse_to_pt_sparse(samples[ind]['DiA']))
         if operator == "simple_dirac":
-            Di.append(samples[ind]['Di'])
+            Di.append(sp_sparse_to_pt_sparse(samples[ind]['simple_Di']))
     if operator=="lap":
         laplacian = sparse_diag_cat(laplacian,num_vertices,num_vertices)
         return inputs.to(device), laplacian.to(device),None,None
@@ -180,9 +190,7 @@ init_epoch=1
 train_performances=[]
 val_performances=[]
 optimizer = optim.Adam(model.parameters(), initial_learning_rate, weight_decay=weight_decay)
-ErrorFile.append(3)
-with open("errors.txt", 'w') as file:
-    file.write(str(ErrorFile))
+
 try:
     os.mkdir(operator+'_'+version)
 except:
