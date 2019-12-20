@@ -27,6 +27,11 @@ def recursive_glob(directory):
 paths=recursive_glob('../data')
 
 directory='../data_vo'
+# import os
+# for subject in range(4):
+#     os.mkdir(directory+'/Subject_{0:02d}'.format(subject))
+#     for matrix in ['V', 'L', 'L_norm','Di', 'DiA','simple_Di']:
+#         os.mkdir(directory+'/Subject_{:02d}/{}'.format(subject,matrix))
 
 for j, subject in enumerate(paths):
     if j > 3:
@@ -51,11 +56,11 @@ for j, subject in enumerate(paths):
             list_Di.append(Di)
             list_DiA.append(DiA)
             list_simple_Di.append(simple_Di)
-        np.save('/Subject_{0:02d}/V/{1:02d}'.format(j,i),list_V)
-        np.save('/Subject_{0:02d}/L/{1:02d}'.format(j,i),list_L)
-        np.save('/Subject_{0:02d}/L_norm/{1:02d}'.format(j,i),list_L_norm)
-        np.save('/Subject_{0:02d}/Di/{1:02d}'.format(j,i),list_Di)
-        np.save('/Subject_{0:02d}/DiA/{1:02d}'.format(j,i),list_DiA)
-        np.save('/Subject_{0:02d}/simple_Di/{1:02d}'.format(j,i),list_simple_Di)
+        np.save(directory+'/Subject_{0:02d}/V/{1:02d}'.format(j,i),list_V)
+        np.save(directory+'/Subject_{0:02d}/L/{1:02d}'.format(j,i),list_L)
+        np.save(directory+'/Subject_{0:02d}/L_norm/{1:02d}'.format(j,i),list_L_norm)
+        np.save(directory+'/Subject_{0:02d}/Di/{1:02d}'.format(j,i),list_Di)
+        np.save(directory+'/Subject_{0:02d}/DiA/{1:02d}'.format(j,i),list_DiA)
+        np.save(directory+'/Subject_{0:02d}/simple_Di/{1:02d}'.format(j,i),list_simple_Di)
 
         gc.collect()

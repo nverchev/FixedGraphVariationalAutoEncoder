@@ -62,70 +62,36 @@ weight_decay=args.weight_decay
 learning_factor=args.adaptive_cycle
 version=args.version
 load=args.load_version
-def load_sparse(sample):
-    if operator == "lap": 
-        sample['L']=torch.sparse.FloatTensor(sample['L.ind'], sample['L.val'], sample['L.size'])
-    if operator == "dirac":
-        sample['Di']=torch.sparse.FloatTensor(sample['Di.ind'], sample['Di.val'], sample['Di.size'])
-        sample['DiA']=torch.sparse.FloatTensor(sample['DiA.ind'], sample['DiA.val'], sample['DiA.size'])
-    if operator == "simple_dirac":
-        sample['Di'] = torch.sparse.FloatTensor(sample['Di.ind'], sample['Di.val'], sample['Di.size'])
-    del sample['Di.ind'], sample['Di.val'], sample['Di.size']
-    try:
-        del sample['L.ind'], sample['L.val'], sample['L.size']
-        del sample['DiA.ind'], sample['DiA.val'], sample['DiA.size']
-    except:
-        pass
-    return sample
-
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-ErrorFile=[]
-with open("errors.txt", 'w') as file:
-    file.write(str(ErrorFile))
-
 data=np.array([])
-path_list=[]
-for path in sorted(glob.glob("../data_vo/preproc_data/*")):
-    for sample in torch.load(path):
-        skip=0
-        for tensor in [key for key in sample.keys() if not re.search("size", key)]:
-            if torch.isnan(sample[tensor]).any():
-                skip=1
-        if not skip:
-            data=np.hstack([data,load_sparse(sample)])
-            path_list.append(path)
 
-with open("errors.txt", 'w') as file:
-    file.write(str(ErrorFile))
-for path in sorted(glob.glob("../scratch_kyukon_vo/preproc_data/*")):
-    for sample in torch.load(path):
-        skip=0
-        for tensor in [key for key in sample.keys() if not re.search("size", key)]:
-            if torch.isnan(sample[tensor]).any():
-                skip=1
-        if not skip:
-            data=np.hstack([data,load_sparse(sample)])
-            path_list.append(path)
+path_list=sorted(glob.glob("../data_vo/V/*"))
+path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/V/*")))
+path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/V/*")))
+for path in path_list:
+    for sample in np.load(path):
+        data=np.hstack([data,{'V':sample}])
 
-with open("errors.txt", 'w') as file:
-    file.write(str(ErrorFile))
-for path in sorted(glob.glob("../scratch_phanpy_vo/preproc_data/*")):
-    for sample in torch.load(path):
-        skip=0
-        for tensor in [key for key in sample.keys() if not re.search("size", key)]:
-            if torch.isnan(sample[tensor]).any():
-                skip=1
-        if not skip:
-            data=np.hstack([data,load_sparse(sample)])
-            path_list.append(path)
-with open("errors.txt", 'w') as file:
-    file.write(str(ErrorFile))
+if operator=='lap':
+    operator_dir='L'
+elif operator=='lap_norm':
+    operator_dir
+
+path_list=sorted(glob.glob("../data_vo/V/*"))
+path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/V/*")))
+path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/V/*")))
+for path in path_list:
+    for sample in np.load(path):
+        data=np.hstack([data,{'V':sample}])
+
+
+
 test_labels=[]
 for i,file in enumerate(path_list):
     if i%10==9:
-        test_labels.append(int(file[-8:-6]))
+        test_labels.append(int(file.split('/')[-1]))
 
 
 train_data=[]
