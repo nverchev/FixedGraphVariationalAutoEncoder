@@ -120,7 +120,7 @@ def area(F, l):
     for f in range(F.shape[0]):
         i, j, k = F[f].tolist()
         sijk = (l[i, j] + l[j, k] + l[k, i]) / 2
-        sum_ = sijk * (sijk - l[i, j]) * (sijk - l[j, k]) * (sijk - l[k, i])
+        sum_ = max(sijk * (sijk - l[i, j]) * (sijk - l[j, k]) * (sijk - l[k, i]),0)
         areas[f] = min(np.sqrt(sum_), 1e-6)
     return areas
 
