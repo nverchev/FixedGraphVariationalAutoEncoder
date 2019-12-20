@@ -163,7 +163,6 @@ def sample_batch(samples,train=True):
     for b, ind in enumerate(indices):
         inputs[b] = samples[ind]['V']
         laplacian.append(samples[ind]['L'])
-
         if operator == "dirac":
             Di.append(samples[ind]['Di'])
             DiA.append(samples[ind]['DiA'])
@@ -180,9 +179,7 @@ def sample_batch(samples,train=True):
     if operator== "simple_dirac":
         Di = sparse_diag_cat(Di, 4 *num_faces, 4 * num_vertices)
         return inputs.to(device), None, Di.to(device), None
-ErrorFile.append(2)
-with open("errors.txt", 'w') as file:
-    file.write(str(ErrorFile))
+
 mean_shape = torch.load('mean_shape.pt').to(device)
 if operator == "lap":
     mean_L_v = torch.load("mean_L_v.pt")
@@ -214,9 +211,9 @@ elif operator == "simple_dirac":
         device).detach()
 
 if operator == "lap":
-    model = LapVAE(num_features,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent)
+    model = LapVAE(num_features,num_blocks_encoder,num_blocks_decoder,dim_latent)
 else:
-    model = DirVAE(num_features,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent)
+    model = DirVAE(num_features,num_blocks_encoder,num_blocks_decoder,dim_latent)
 
 init_epoch=1
 train_performances=[]
@@ -251,10 +248,6 @@ if load+1:
     except:
         print("No saved models!")
 
-
-ErrorFile.append(4)
-with open("errors.txt", 'w') as file:
-    file.write(str(ErrorFile))
 num_params = 0
 for param in model.parameters():
     num_params += param.numel()
@@ -295,9 +288,6 @@ for epoch in range(init_epoch,init_epoch+num_epoch):
                   loss_kld / (len(train_data) // batch_size))
     train_performances.append(info_loss)
 
-    ErrorFile.append(5)
-    with open("errors.txt", 'w') as file:
-        file.write(str(ErrorFile))
     # for param_group in optimizer.param_groups:
   #  param_group['lr'] = initial_learning_rate*np.exp(-int(epoch/learning_factor))
 
@@ -345,9 +335,6 @@ for epoch in range(init_epoch,init_epoch+num_epoch):
 
 torch.cuda.empty_cache()
 
-ErrorFile.append(6)
-with open("errors.txt", 'w') as file:
-    file.write(str(ErrorFile))
 import gc
 
 gc.collect()
