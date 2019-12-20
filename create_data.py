@@ -1,4 +1,4 @@
-ffrom plyfile import PlyData
+from plyfile import PlyData
 from glob import glob
 import numpy as np
 import gc
