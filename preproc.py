@@ -20,7 +20,7 @@ def area(F, l):
     for f in range(F.shape[0]):
         i, j, k = F[f].tolist()
         sijk = (l[i, j] + l[j, k] + l[k, i]) / 2
-        sum_ = max(sijk * (sijk - l[i, j]) * (sijk - l[j, k]) * (sijk - l[k, i]),1e-12)
+        sum_ = max(sijk * (sijk - l[i, j]) * (sijk - l[j, k]) * (sijk - l[k, i]),1e-10)
         areas[f] = np.sqrt(sum_)
     return areas
 
@@ -31,13 +31,13 @@ def cotangent_weights(F, a, l):
     for f in range(F.shape[0]):
         for v_ind in itertools.permutations(F[f].tolist()):
             i, j, k = v_ind
-            W[i, j] += (-l[i, j] ** 2 + l[j, k] ** 2 + l[k, i] ** 2) / (8 * a[f] + 1e-5)
+            W[i, j] += (-l[i, j] ** 2 + l[j, k] ** 2 + l[k, i] ** 2) / (8 * a[f])
             A[i] += a[f] / 3 / 2  # each face will appear 2 times
 
-    return sparse.csr_matrix(W), sparse.diags(1 / (A + 1e-5), 0)
+    return sparse.csr_matrix(W), sparse.diags(1 / A, 0)
 
 
-def laplacian(W, A_inv):
+def laplacian(W):
     """Return the Laplacian of the weigth matrix."""
 
     # Degree matrix.
@@ -69,10 +69,10 @@ def dirac(V, F, l, Af):
             e1 = V[ind1]
             e2 = V[ind2]
             e = np.array([0, e1[0] - e2[0], e1[1] - e2[1], e1[2] - e2[2]])
-            mat = -quaternion_matrix(e) / 2
+            mat = -quaternion_matrix(e)
             simple_Di[i * 4:(i + 1) * 4, j * 4: (j + 1) * 4] = mat
-            Di[i * 4:(i + 1) * 4, j * 4: (j + 1) * 4] = mat / Af[i]
-            DiA[j * 4:(j + 1) * 4, i * 4: (i + 1) * 4] = -mat / Av[j]
+            Di[i * 4:(i + 1) * 4, j * 4: (j + 1) * 4] = mat / (2*Af[i])
+            DiA[j * 4:(j + 1) * 4, i * 4: (i + 1) * 4] = -mat / (2*Av[j])
     simple_Di = sparse.csr_matrix(simple_Di)
     Di = sparse.csr_matrix(Di)
     DiA = sparse.csr_matrix(DiA)
@@ -84,7 +84,7 @@ def process(sample):
     l = dist(V, F)
     a = area(F, l)
     W, A = cotangent_weights(F, a, l)
-    L = laplacian(W, A)
+    L = laplacian(W)
     L_norm=A*L
     Di, DiA,simple_Di = dirac(V, F, l, a)
     for array in [V, F, L.data, L_norm.data,Di.data, DiA.data,simple_Di.data]:
