@@ -1,4 +1,4 @@
-from plyfile import PlyData
+ffrom plyfile import PlyData
 from glob import glob
 import numpy as np
 import gc
@@ -14,7 +14,7 @@ def ply_to_numpy(plydata):
 
 def recursive_glob(directory):
     path_subjects=[]
-    for subject in sorted(glob(directory+"/coma/*")):
+    for subject in sorted(glob(directory+"/*")):
         path_expressions = []
         for expression in sorted(glob(subject+"/*")):
             path_expressions.append(sorted(glob(expression+ "/*")))
@@ -23,10 +23,10 @@ def recursive_glob(directory):
     return path_subjects
 
 
-directory='/home/nicolas/Desktop'
 
-paths=recursive_glob(directory)
+paths=recursive_glob('../data')
 
+directory='../data_vo'
 
 for j, subject in enumerate(paths):
     if j > 3:
@@ -51,11 +51,11 @@ for j, subject in enumerate(paths):
             list_Di.append(Di)
             list_DiA.append(DiA)
             list_simple_Di.append(simple_Di)
-        np.save('/home/nicolas/Desktop/temp/Subject_{0:02d}/V/{1:02d}'.format(j,i),list_V)
-        np.save('/home/nicolas/Desktop/temp/Subject_{0:02d}/L/{1:02d}'.format(j,i),list_L)
-        np.save('/home/nicolas/Desktop/temp/Subject_{0:02d}/L_norm/{1:02d}'.format(j,i),list_L_norm)
-        np.save('/home/nicolas/Desktop/temp/Subject_{0:02d}/Di/{1:02d}'.format(j,i),list_Di)
-        np.save('/home/nicolas/Desktop/temp/Subject_{0:02d}/DiA/{1:02d}'.format(j,i),list_DiA)
-        np.save('/home/nicolas/Desktop/temp/Subject_{0:02d}/simple_Di/{1:02d}'.format(j,i),list_simple_Di)
+        np.save('/Subject_{0:02d}/V/{1:02d}'.format(j,i),list_V)
+        np.save('/Subject_{0:02d}/L/{1:02d}'.format(j,i),list_L)
+        np.save('/Subject_{0:02d}/L_norm/{1:02d}'.format(j,i),list_L_norm)
+        np.save('/Subject_{0:02d}/Di/{1:02d}'.format(j,i),list_Di)
+        np.save('/Subject_{0:02d}/DiA/{1:02d}'.format(j,i),list_DiA)
+        np.save('/Subject_{0:02d}/simple_Di/{1:02d}'.format(j,i),list_simple_Di)
 
         gc.collect()
