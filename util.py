@@ -161,4 +161,4 @@ def process(sample):
     L = laplacian(W, A)
     Di, DiA = dirac(V, F, l, a)
     simple_Di= simple_dirac(V, F)
-    return L.float(), Di.float(), DiA.float(),simple_Di.float()
+    return L.float().coalesce(), Di.float().coalesce(), DiA.float().coalesce(),simple_Di.float().coalesce()
