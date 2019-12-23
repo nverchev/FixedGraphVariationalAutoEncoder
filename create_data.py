@@ -26,15 +26,15 @@ def recursive_glob(directory):
 
 paths=recursive_glob('../data')
 
-directory='../scrach_kyukon_vo'
-import os
-for subject in range(4,8):
-    os.mkdir(directory+'/Subject_{0:02d}'.format(subject))
-    for matrix in ['V', 'L', 'L_norm','Di', 'DiA','simple_Di']:
-        os.mkdir(directory+'/Subject_{:02d}/{}'.format(subject,matrix))
+directory='../scrach_data_vo'
+# import os
+# for subject in range(4,8):
+#     os.mkdir(directory+'/Subject_{0:02d}'.format(subject))
+#     for matrix in ['V', 'L', 'L_norm','Di', 'DiA','simple_Di']:
+#         os.mkdir(directory+'/Subject_{:02d}/{}'.format(subject,matrix))
 
 for j, subject in enumerate(paths):
-    if j > 7 or j < 4 :
+    if j==3 :
         continue
     print("subject: ",j)
     for i, expression in enumerate(paths[j]):
@@ -45,7 +45,9 @@ for j, subject in enumerate(paths):
         list_DiA=[]
         list_simple_Di=[]
 
-        for path in expression:
+        for l, path in enumerate(expression):
+            if l <10:
+                continue
             with open(path, 'rb') as f:
                 plydata = PlyData.read(f)
             V, F = ply_to_numpy(plydata)
