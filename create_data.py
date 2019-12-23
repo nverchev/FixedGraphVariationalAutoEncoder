@@ -34,7 +34,7 @@ import os
 #         os.mkdir(directory+'/Subject_{:02d}/{}'.format(subject,matrix))
 
 for j, subject in enumerate(paths):
-    if j!=5 :
+    if j not in [4,6,7] :
         continue
     print("subject: ",j)
     for i, expression in enumerate(paths[j]):
