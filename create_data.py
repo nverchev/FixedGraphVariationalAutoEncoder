@@ -26,15 +26,15 @@ def recursive_glob(directory):
 
 paths=recursive_glob('../data')
 
-directory='../scratch_kyukon_vo'
+directory='../scratch_kyukon'
 import os
-for subject in [4,6,7]:
+for subject in range(5,6):
     os.mkdir(directory+'/Subject_{0:02d}'.format(subject))
     for matrix in ['V', 'L', 'L_norm','Di', 'DiA','simple_Di']:
         os.mkdir(directory+'/Subject_{:02d}/{}'.format(subject,matrix))
 
 for j, subject in enumerate(paths):
-    if j not in [4,6,7]:
+    if j!=5 :
         continue
     print("subject: ",j)
     for i, expression in enumerate(paths[j]):
