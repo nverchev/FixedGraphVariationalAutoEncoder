@@ -26,7 +26,7 @@ def recursive_glob(directory):
 
 paths=recursive_glob('../data')
 
-directory='../scratch_kyukon'
+directory='../scratch_kyukon_vo'
 import os
 # for subject in range(5,6):
 #     os.mkdir(directory+'/Subject_{0:02d}'.format(subject))
