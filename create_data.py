@@ -28,10 +28,10 @@ paths=recursive_glob('../data')
 
 directory='../scratch_phanpy_vo'
 import os
-for subject in [8,10,11]:
-    os.mkdir(directory+'/Subject_{0:02d}'.format(subject))
-    for matrix in ['V', 'L', 'L_norm','Di', 'DiA','simple_Di']:
-        os.mkdir(directory+'/Subject_{:02d}/{}'.format(subject,matrix))
+# for subject in [8,10,11]:
+#     os.mkdir(directory+'/Subject_{0:02d}'.format(subject))
+#     for matrix in ['V', 'L', 'L_norm','Di', 'DiA','simple_Di']:
+#         os.mkdir(directory+'/Subject_{:02d}/{}'.format(subject,matrix))
 
 for j, subject in enumerate(paths):
     if j not in [8,10,11] :
