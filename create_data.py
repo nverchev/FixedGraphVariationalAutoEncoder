@@ -26,18 +26,20 @@ def recursive_glob(directory):
 
 paths=recursive_glob('../data')
 
-directory='../scratch_kyukon'
+directory='../scratch_phanpy'
 import os
-# for subject in [8,10,11]:
-#     os.mkdir(directory+'/Subject_{0:02d}'.format(subject))
-#     for matrix in ['V', 'L', 'L_norm','Di', 'DiA','simple_Di']:
-#         os.mkdir(directory+'/Subject_{:02d}/{}'.format(subject,matrix))
+for subject in [9]:
+    os.mkdir(directory+'/Subject_{0:02d}'.format(subject))
+    for matrix in ['V', 'L', 'L_norm','Di', 'DiA','simple_Di']:
+        os.mkdir(directory+'/Subject_{:02d}/{}'.format(subject,matrix))
 
 for j, subject in enumerate(paths):
-    if j not in [5] :
+    if j not in [9] :
         continue
     print("subject: ",j)
     for i, expression in enumerate(paths[j]):
+        if i <6:
+            pass
         list_V=[]
         list_L=[]
         list_L_norm=[]
