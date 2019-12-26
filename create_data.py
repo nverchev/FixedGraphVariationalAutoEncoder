@@ -26,7 +26,7 @@ def recursive_glob(directory):
 
 paths=recursive_glob('../data')
 
-directory='../scratch_phanpy'
+directory='../scratch_phanpy_vo'
 import os
 for subject in [9]:
     os.mkdir(directory+'/Subject_{0:02d}'.format(subject))
@@ -38,8 +38,8 @@ for j, subject in enumerate(paths):
         continue
     print("subject: ",j)
     for i, expression in enumerate(paths[j]):
-        if i <6:
-            pass
+        if i <10:
+            continue
         list_V=[]
         list_L=[]
         list_L_norm=[]
