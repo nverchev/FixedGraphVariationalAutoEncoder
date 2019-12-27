@@ -45,7 +45,7 @@ parser.add_argument('--initial-learning_rate', type=float, default=0.00001, meta
 parser.add_argument('--model', default="lap",
                     help='lap | lap_nor | dirac | simple_dirac')
 parser.add_argument('--version', default="hpc_temp")
-parser.add_argument('--load-version', type=int, default=0, metavar='N',
+parser.add_argument('--load-version', type=int, default=0 , metavar='N',
                     help="-1 don't load,0 most recent otherwise epoch")
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
