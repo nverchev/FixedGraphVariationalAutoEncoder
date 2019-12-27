@@ -9,7 +9,7 @@ minioClient = Minio('s3nverchev.ugent.be',
                   secret_key='yC2UlxBD+exlGz5S+zLaVclYUvRQ9D8msgOMVAWh',secure=True)
 
 with open("err.txt",'w') as file:
-    file.write(0)
+    file.write(str(0))
 
 for subject in sorted(glob.glob("../data_vo/*")):
     print(subject)
@@ -19,13 +19,13 @@ for subject in sorted(glob.glob("../data_vo/*")):
         tar.add(operator)
         tar.close()
         with open("err.txt", 'w') as file:
-            file.write(1)
+            file.write(str(1))
         minioClient.fput_object('coma', tarname, tarname)
         with open("err.txt", 'w') as file:
-            file.write(2)
+            file.write(str(2))
         shutil.rmtree(tarname)
         with open("err.txt", 'w') as file:
-            file.write(3)
+            file.write(str(3))
         print(operator)
         break
 
