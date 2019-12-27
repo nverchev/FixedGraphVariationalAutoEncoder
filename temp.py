@@ -13,7 +13,7 @@ with open("err.txt",'w') as file:
 
 for subject in sorted(glob.glob("../data_vo/*")):
     print(subject)
-    for operator in sorted(glob.glob(subject)):
+    for operator in sorted(glob.glob(subject+'/*')):
         with open("err.txt", 'w') as file:
             file.write(operator)
         tarname=operator.split('/')[-1]+'_'+str(subject[-2:-1])+".tar.gz"
