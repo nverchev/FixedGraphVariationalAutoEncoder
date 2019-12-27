@@ -61,7 +61,6 @@ def dirac(V, F, l, Af):
     for i in range(F.shape[0]):
         for ind, j in enumerate(F[i]):
             Av[j] += Af[i] / 3
-
     for i in range(F.shape[0]):
         for ind, j in enumerate(F[i]):
             ind1 = F[i, (ind + 1) % 3]

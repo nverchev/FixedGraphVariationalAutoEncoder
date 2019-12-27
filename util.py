@@ -23,7 +23,6 @@ def pt_to_pt_sparse(x):
     values = x[tuple(indices[i] for i in range(indices.shape[0]))]
     return sparse_tensortype(indices, values, x.size())
 
-
 def sp_sparse_to_pt_sparse(L):
     """
     Converts a scipy matrix into a pytorch one.
