@@ -63,7 +63,6 @@ learning_factor=args.adaptive_cycle
 version=args.version
 load=args.load_version
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(operator,num_epoch,batch_size,num_features,dim_latent,num_blocks_encoder,num_blocks_decoder,initial_learning_rate,weight_decay,learning_factor,version,load,device)
 
 data=np.array([])
 
@@ -84,7 +83,7 @@ np.save('mean_L_norm',L_norm)
 np.save('mean_Di',Di)
 np.save('mean_DiA',DiA)
 np.save('mean_simple_Di',simple_Di)
-for file in ['mean_shape','faces.npy','mean_L','mean_L_norm','mean_Di','mean_DiA','mean_simple_Di']:
+for file in ['mean_shape.npy','faces.npy','mean_L.npy','mean_L_norm.npy','mean_Di.npy','mean_DiA.npy','mean_simple_Di.npy']:
     minioClient.fput_object('coma',file,file)
 print(len(data))
 #
