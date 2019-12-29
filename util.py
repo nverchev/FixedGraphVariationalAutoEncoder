@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 def sparse_diag_cat(tensors, size0, size1):
     values = []
     for i, tensor in enumerate(tensors):
