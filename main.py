@@ -119,7 +119,7 @@ for i, path in enumerate(path_list):
     for sample in np.load(path):
         data=np.hstack([data,{'V':sample}])
     if i % 10 == 9:
-        test_labels.append(int(path.split('/')[-1]))
+        test_labels.append(int(path.split('/')[-1][:2]))
 
 if operator == 'lap':
     operator_dir = 'L'
