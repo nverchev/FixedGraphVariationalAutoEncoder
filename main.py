@@ -65,7 +65,7 @@ weight_decay = args.weight_decay
 learning_factor = args.adaptive_cycle
 version = args.version
 load = args.load_version
-loss_function = args.loss
+loss_ = args.loss
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
@@ -244,11 +244,11 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
         loss_bce, loss_kld = loss_bce + BCE.item(), loss_kld + KLD.item()
         L1_error = L1_loss_function(inputs, recon_mu)
         L1_loss += L1_error.item()
-        if loss_function == 'L1':
+        if loss_ == 'L1':
             loss = L1_error + 1 / 1000 * KLD
-        elif loss_function == 'ELBO':
+        elif loss_ == 'ELBO':
             loss = BCE + KLD * min(epoch / 100.0, 1)
-        elif loss_function == 'mixed_loss':
+        elif loss_ == 'mixed_loss':
             loss = BCE * (1 - epoch / 1000) + L1_error * (epoch / 1000) + KLD * min(epoch / 100.0, 1)
 
         optimizer.zero_grad()
