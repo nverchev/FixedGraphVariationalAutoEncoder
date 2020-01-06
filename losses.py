@@ -3,7 +3,6 @@ import torch
 import numpy as np
 def log_normal_diag(z, mu, logvar):
     return -0.5 * (math.log(2 * math.pi) + logvar + (z - mu).pow(2) / logvar.exp())
-
 def loss_function(recon_mu, recon_logvar, x, z, mu, logvar):
     x = x.view(x.size(0), -1)
     recon_mu = recon_mu.view(x.size(0), -1)
