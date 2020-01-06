@@ -108,7 +108,7 @@ data = []
 mean_shape = torch.tensor(np.load('mean_shape.npy', allow_pickle=True)).to(device)
 
 data=[]
-test_labels = []
+labels = []
 
 path_list=sorted(glob.glob("../data_vo/*/V/*"))
 path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/*/V/*")))
@@ -118,8 +118,7 @@ path_list.extend(sorted(glob.glob("../scratch_phanpy/*/V/*")))
 for i, path in enumerate(path_list):
     for sample in np.load(path):
         data=np.hstack([data,{'V':sample}])
-        if i % 10 == 9:
-            test_labels.append(int(path.split('/')[-1][:2]))
+        labels.append(int(path.split('/')[-1][:2]))
 
 if operator == 'lap':
     operator_dir = 'L'
@@ -179,6 +178,11 @@ for i, sample in enumerate(data):
         test_data.append(sample)
     else:
         train_data.append(sample)
+
+test_labels=[]
+for i, label in enumerate(labels):
+    if i % 10 == 9:
+        test_labels.append(label)
 
 
 if operator == "lap":
