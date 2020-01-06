@@ -41,8 +41,8 @@ parser.add_argument('--dim-latent', type=int, default=8, metavar='N',
                     help='dimension latent space  (default: 8)')
 parser.add_argument('--weight_decay', type=float, default=0.000001, metavar='N',
                     help='regulizer (default: 100)')
-parser.add_argument('--initial-learning_rate', type=float, default=0.001, metavar='N',
-                    help='num of training epochs (default: 0.001)')
+parser.add_argument('--initial_learning_rate', type=float, default=0.01, metavar='N',
+                    help='learning rate (default: 0.01)')
 parser.add_argument('--model', default="lap",
                     help='lap | lap_norm | dirac | simple_dirac')
 parser.add_argument('--loss', default="ELBO",
@@ -254,7 +254,7 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
             loss = BCE + KLD * min(epoch / 100.0, 1)
         elif loss_ == 'mixed_loss':
             loss = BCE * (1 - epoch / 1000) + L1_error * (epoch / 1000) + KLD * min(epoch / 100.0, 1)
-
+        assert not np.isnan(loss.item())
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -350,7 +350,7 @@ for i in range(num_evaluation):
     euclidean_error[i], euclidean_dist[i] = euclidean(inputs, recon_mu)
     L1_error[i] = L1_loss_function(inputs, recon_mu).item()
 print("Euclidean Mean Error= ", euclidean_dist.mean())
-print("Euclidean std Error= ", euclidean_dist.std()())
+print("Euclidean std Error= ", euclidean_dist.std())
 print("Euclidean Mean %Error= ", euclidean_error.mean())
 print("Euclidean std %Error= ", euclidean_error.var())
 
