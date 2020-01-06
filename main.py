@@ -44,7 +44,7 @@ parser.add_argument('--weight_decay', type=float, default=0.000001, metavar='N',
 parser.add_argument('--initial-learning_rate', type=float, default=0.001, metavar='N',
                     help='num of training epochs (default: 0.001)')
 parser.add_argument('--model', default="lap",
-                    help='lap | dirac | simple_dirac')
+                    help='lap | lap_norm | dirac | simple_dirac')
 parser.add_argument('--loss', default="ELBO",
                     help='ELBO | L1 | mixed')
 parser.add_argument('--version', default="hpc_temp")
@@ -118,8 +118,8 @@ path_list.extend(sorted(glob.glob("../scratch_phanpy/*/V/*")))
 for i, path in enumerate(path_list):
     for sample in np.load(path):
         data=np.hstack([data,{'V':sample}])
-    if i % 10 == 9:
-        test_labels.append(int(path.split('/')[-1][:2]))
+        if i % 10 == 9:
+            test_labels.append(int(path.split('/')[-1][:2]))
 
 if operator == 'lap':
     operator_dir = 'L'
@@ -128,7 +128,7 @@ if operator == 'lap':
 elif operator == 'lap_norm':
     operator_dir = 'L_norm'
     L_norm = sp_sparse_to_pt_sparse(np.load('mean_L_norm.npy', allow_pickle=True).tolist().astype('f4'))
-    mean_L_norm = sparse_diag_cat([L_norm for _ in range(batch_size)], num_vertices, num_vertices).to(device)
+    mean_L = sparse_diag_cat([L_norm for _ in range(batch_size)], num_vertices, num_vertices).to(device)
 elif operator == 'dirac':
     operator_dir = 'Di'
     Di = sp_sparse_to_pt_sparse(np.load('mean_Di.npy', allow_pickle=True).tolist().astype('f4'))
@@ -233,7 +233,7 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
     # Train
     for j in range(len(train_data) // batch_size):
         inputs, L, Di, DiA = sample_batch(train_data)
-        if operator == "lap":
+        if operator == "lap" or operator == "lap_norm":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L)
         if operator == "dirac":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, DiA, mean_shape, mean_Di, mean_DiA)
@@ -274,7 +274,7 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
     # Evaluate
     for j in range(len(val_data) // batch_size):
         inputs, laplacian, Di, DiA = sample_batch(val_data)
-        if operator == "lap":
+        if operator == "lap" or operator == "lap_norm":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L)
         if operator == "dirac":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, DiA, mean_shape, mean_Di, mean_DiA)
@@ -316,7 +316,7 @@ import gc
 
 gc.collect()
 # @title test
-num_evaluation = 500
+num_evaluation = 50
 L1_error = np.zeros((num_evaluation))
 euclidean_error = np.zeros((num_evaluation))
 euclidean_dist = np.zeros((num_evaluation))
@@ -332,7 +332,7 @@ for i in range(num_evaluation):
         label_batch.append(test_labels[s])
 
     inputs, laplacian, Di, DiA = sample_batch(batch, False)
-    if operator == "lap":
+    if operator == "lap" or operator == "lap_norm":
         recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L)
     if operator == "dirac":
         recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, DiA, mean_shape, mean_Di, mean_DiA)
