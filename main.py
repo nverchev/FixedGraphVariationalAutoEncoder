@@ -1,5 +1,5 @@
 from models import LapVAE, DirVAE
-from util import sparse_diag_cat,sp_sparse_to_pt_sparse
+from util import sparse_diag_cat, sp_sparse_to_pt_sparse
 from losses import *
 import torch
 import numpy as np
@@ -9,14 +9,15 @@ import re
 import os
 from torch import optim
 from preproc import process
-#Change this
+# Change this
 from minio import Minio
 from minio.error import ResponseError
 import argparse
+
 minioClient = Minio('s3nverchev.ugent.be',
-                  access_key='M12AX6PRAW2HUPUHPTL0',
-                  secret_key='yC2UlxBD+exlGz5S+zLaVclYUvRQ9D8msgOMVAWh',
-                  secure=True)
+                    access_key='M12AX6PRAW2HUPUHPTL0',
+                    secret_key='yC2UlxBD+exlGz5S+zLaVclYUvRQ9D8msgOMVAWh',
+                    secure=True)
 num_vertices = 5023
 num_faces = 9976
 
@@ -44,6 +45,8 @@ parser.add_argument('--initial-learning_rate', type=float, default=0.001, metava
                     help='num of training epochs (default: 0.001)')
 parser.add_argument('--model', default="lap",
                     help='lap | dirac | simple_dirac')
+parser.add_argument('--loss', default="ELBO",
+                    help='ELBO | L1 | mixed')
 parser.add_argument('--version', default="hpc_temp")
 parser.add_argument('--load-version', type=int, default=1000, metavar='N',
                     help="-1 don't load,0 most recent otherwise epoch")
@@ -52,69 +55,18 @@ args.cuda = not args.no_cuda and torch.cuda.is_available()
 
 operator = args.model
 num_epoch = args.num_epoch
-batch_size= args.batch_size
-num_features=args.num_features
-dim_latent=args.dim_latent
-num_blocks_encoder= args.num_blocks_encoder
-num_blocks_decoder=args.num_blocks_decoder
-initial_learning_rate=args.initial_learning_rate
-weight_decay=args.weight_decay
-learning_factor=args.adaptive_cycle
-version=args.version
-load=args.load_version
-
+batch_size = args.batch_size
+num_features = args.num_features
+dim_latent = args.dim_latent
+num_blocks_encoder = args.num_blocks_encoder
+num_blocks_decoder = args.num_blocks_decoder
+initial_learning_rate = args.initial_learning_rate
+weight_decay = args.weight_decay
+learning_factor = args.adaptive_cycle
+version = args.version
+load = args.load_version
+loss_function = args.loss
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-data=np.array([])
-
-path_list=sorted(glob.glob("../data_vo/V/*"))
-path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/V/*")))
-path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/V/*")))
-for path in path_list:
-    for sample in np.load(path):
-        data=np.hstack([data,{'V':sample}])
-
-if operator=='lap':
-    operator_dir='L'
-elif operator=='lap_norm':
-    operator_dir='L_norm'
-elif operator=='dirac':
-    operator_dir='Di'
-elif operator=='simple_dirac':
-    operator_dir='simple_Di'
-path_list=sorted(glob.glob("../data_vo/"+ operator_dir+"/*"))
-path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/"+ operator_dir+"/*")))
-path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/"+ operator_dir+"/*")))
-
-for path in path_list:
-    for i, sample in enumerate(np.load(path)):
-        data[i][operator_dir]=sample
-
-if operator=='dirac':
-    path_list=sorted(glob.glob("../data_vo/Dia/*"))
-    path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/DiA/*")))
-    path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/DiA/*")))
-    for path in path_list:
-        for i, sample in enumerate(np.load(path)):
-            data[i]['DiA'] = sample
-
-test_labels=[]
-for i,file in enumerate(path_list):
-    if i%10==9:
-        test_labels.append(int(file.split('/')[-1]))
-
-
-train_data=[]
-val_data=[]
-test_data=[]
-for i,sample in enumerate(data):
-    if i%10==8:
-        val_data.append(sample)
-    elif i%10==9:
-        test_data.append(sample)
-    else:
-        train_data.append(sample)
-
 
 
 def sample_batch(samples,train=True):
@@ -132,13 +84,13 @@ def sample_batch(samples,train=True):
     Di = []
     DiA = []
     for b, ind in enumerate(indices):
-        inputs[b] = samples[ind]['V']
+        inputs[b] = torch.tensor(samples[ind]['V'])
         laplacian.append(sp_sparse_to_pt_sparse(samples[ind]['L']))
         if operator == "dirac":
-            Di.append(sp_sparse_to_pt_sparse(samples[ind]['Di']))
-            DiA.append(sp_sparse_to_pt_sparse(samples[ind]['DiA']))
+            Di.append(sp_sparse_to_pt_sparse(samples[ind]['Di'].tolist()))
+            DiA.append(sp_sparse_to_pt_sparse(samples[ind]['DiA'].tolist()))
         if operator == "simple_dirac":
-            Di.append(sp_sparse_to_pt_sparse(samples[ind]['simple_Di']))
+            Di.append(sp_sparse_to_pt_sparse(samples[ind]['Di'].tolist()))
     if operator=="lap":
         laplacian = sparse_diag_cat(laplacian,num_vertices,num_vertices)
         return inputs.to(device), laplacian.to(device),None,None
@@ -151,69 +103,119 @@ def sample_batch(samples,train=True):
         Di = sparse_diag_cat(Di, 4 *num_faces, 4 * num_vertices)
         return inputs.to(device), None, Di.to(device), None
 
-mean_shape = torch.load('mean_shape.pt').to(device)
+
+data = []
+mean_shape = torch.tensor(np.load('mean_shape.npy', allow_pickle=True)).to(device)
+
+data=[]
+test_labels = []
+
+path_list=sorted(glob.glob("../data_vo/*/V/*"))
+path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/*/V/*")))
+path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/*/V/*")))
+path_list.extend(sorted(glob.glob("../scratch_kyukon/*/V/*")))
+path_list.extend(sorted(glob.glob("../scratch_phanpy/*/V/*")))
+for i, path in enumerate(path_list):
+    for sample in np.load(path):
+        data=np.hstack([data,{'V':sample}])
+    if i % 10 == 9:
+        test_labels.append(int(path.split('/')[-1]))
+
+if operator == 'lap':
+    operator_dir = 'L'
+    L = sp_sparse_to_pt_sparse(np.load('mean_L.npy', allow_pickle=True).tolist().astype('f4'))
+    mean_L = sparse_diag_cat([L for _ in range(batch_size)], num_vertices, num_vertices).to(device)
+elif operator == 'lap_norm':
+    operator_dir = 'L_norm'
+    L_norm = sp_sparse_to_pt_sparse(np.load('mean_L_norm.npy', allow_pickle=True).tolist().astype('f4'))
+    mean_L_norm = sparse_diag_cat([L_norm for _ in range(batch_size)], num_vertices, num_vertices).to(device)
+elif operator == 'dirac':
+    operator_dir = 'Di'
+    Di = sp_sparse_to_pt_sparse(np.load('mean_Di.npy', allow_pickle=True).tolist().astype('f4'))
+    mean_Di = sparse_diag_cat([Di for _ in range(batch_size)], 4 * num_faces, 4 * num_vertices).to(device)
+    DiA = sp_sparse_to_pt_sparse(np.load('mean_DiA.npy', allow_pickle=True).tolist().astype('f4'))
+    mean_DiA = sparse_diag_cat([DiA for _ in range(batch_size)], 4 * num_vertices, 4 * num_faces).to(device)
+
+elif operator == 'simple_dirac':
+    operator_dir = 'simple_Di'
+    simple_Di = sp_sparse_to_pt_sparse(np.load('mean_simple_Di.npy', allow_pickle=True).tolist().astype('f4'))
+    mean_simple_Di = sparse_diag_cat([simple_Di for _ in range(batch_size)], 4 * num_faces, 4 * num_vertices).to(device)
+
+
+path_list = sorted(glob.glob("../data_vo/*/" + operator_dir + "/*"))
+path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/*/" + operator_dir + "/*")))
+path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/*/" + operator_dir + "/*")))
+path_list.extend(sorted(glob.glob("../scratch_kyukon/*/" + operator_dir + "/*")))
+path_list.extend(sorted(glob.glob("../scratch_phanpy/*/" + operator_dir + "/*")))
+
+
+i = 0
+for path in path_list:
+    print(path)
+    for sample in np.load(path):
+        data[i][operator_dir] = sample.astype('f4')
+        i += 1
+
+if operator == 'dirac':
+    path_list = sorted(glob.glob("../data_vo/Dia/*"))
+    path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/*/DiA/*")))
+    path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/*/DiA/*")))
+    path_list.extend(sorted(glob.glob("../scratch_kyukon/*/DiA/*")))
+    path_list.extend(sorted(glob.glob("../scratch_phanpy/*/DiA/*")))
+    i = 0
+    for path in path_list:
+        for sample in np.load(path):
+            data[i]['DiA'] = sample.astype('f4')
+            i += 1
+
+
+train_data = []
+val_data = []
+test_data = []
+for i, sample in enumerate(data):
+    if i % 10 == 8:
+        val_data.append(sample)
+    elif i % 10 == 9:
+        test_data.append(sample)
+    else:
+        train_data.append(sample)
+
+
 if operator == "lap":
-    mean_L_v = torch.load("mean_L_v.pt")
-    mean_L_i = torch.load("mean_L_i.pt")
-    mean_L_s = torch.load("mean_L_s.pt")
-    mean_L = torch.sparse.FloatTensor(mean_L_i, mean_L_v, mean_L_s).cpu()
-    mean_L = sparse_diag_cat([mean_L for _ in range(batch_size)], num_vertices, num_vertices).to(device).detach()
-
-elif operator == "dirac":
-    mean_Di_v = torch.load("mean_simple_Di_v.pt")
-    mean_Di_i = torch.load("mean_simple_Di_i.pt")
-    mean_Di_s = torch.load("mean_simple_Di_s.pt")
-    mean_DiA_v = torch.load("mean_simple_DiA_v.pt")
-    mean_DiA_i = torch.load("mean_simple_DiA_i.pt")
-    mean_DiA_s = torch.load("mean_simple_DiA_s.pt")
-    mean_Di = torch.sparse.FloatTensor(mean_Di_i, mean_Di_v, mean_Di_s).cpu()
-    mean_Di = sparse_diag_cat([mean_Di for _ in range(batch_size)], 4 * num_faces, 4 * num_vertices).to(
-        device).detach()
-    mean_DiA = torch.sparse.FloatTensor(mean_DiA_i, mean_DiA_v, mean_DiA_s).cpu()
-    mean_DiA = sparse_diag_cat([mean_DiA for _ in range(batch_size)], 4 * num_faces, 4 * num_vertices).to(
-        device).detach()
-
-elif operator == "simple_dirac":
-    mean_simple_Di_v = torch.load("mean_simple_Di_v.pt")
-    mean_simple_Di_i = torch.load("mean_simple_Di_i.pt")
-    mean_simple_Di_s = torch.load("mean_simple_Di_s.pt")
-    mean_simple_Di = torch.sparse.FloatTensor(mean_simple_Di_i, mean_simple_Di_v, mean_simple_Di_s).cpu()
-    mean_simple_Di = sparse_diag_cat([mean_simple_Di for _ in range(batch_size)], 4 * num_faces, 4 * num_vertices).to(
-        device).detach()
-
-if operator == "lap":
-    model = LapVAE(num_features,num_blocks_encoder,num_blocks_decoder,dim_latent)
+    model = LapVAE(num_features, num_blocks_encoder, num_blocks_decoder, dim_latent)
 else:
-    model = DirVAE(num_features,num_blocks_encoder,num_blocks_decoder,dim_latent)
+    model = DirVAE(num_features, num_blocks_encoder, num_blocks_decoder, dim_latent)
 
-init_epoch=1
-train_performances=[]
-val_performances=[]
+init_epoch = 1
+train_performances = []
+val_performances = []
 optimizer = optim.Adam(model.parameters(), initial_learning_rate, weight_decay=weight_decay)
 
 try:
-    os.mkdir(operator+'_'+version)
+    os.mkdir(operator + '_' + version)
 except:
     pass
-if load+1:
+if load + 1:
     try:
 
-        for file in minioClient.list_objects('coma',recursive=True):
-            file= file.object_name
-            if file.split("/")[0]==operator+'_'+version:
-                minioClient.fget_object('coma',file,file)
-        list_models={int(re.sub("\D", "",file)) :file for file in glob.glob('{}/model_epoch*'.format(operator+'_'+version))}
-        list_optimizer={int(re.sub("\D", "",file)) :file for file in glob.glob('{}/optimizer_epoch*'.format(operator+'_'+version))}
-        max_epoch=load if load else max(list_models.keys())
-        init_epoch=max_epoch+1
+        for file in minioClient.list_objects('coma', recursive=True):
+            file = file.object_name
+            if file.split("/")[0] == operator + '_' + version:
+                minioClient.fget_object('coma', file, file)
+        list_models = {int(re.sub("\D", "", file)): file for file in
+                       glob.glob('{}/model_epoch*'.format(operator + '_' + version))}
+        list_optimizer = {int(re.sub("\D", "", file)): file for file in
+                          glob.glob('{}/optimizer_epoch*'.format(operator + '_' + version))}
+        max_epoch = load if load else max(list_models.keys())
+        init_epoch = max_epoch + 1
         model.load_state_dict(torch.load(list_models[max_epoch]))
         model.to(device)
         optimizer.load_state_dict(torch.load(list_optimizer[max_epoch]))
-        with open("{}/train_performances.txt".format(operator+'_'+version),'r') as file:
-            train_performances=eval(file.read())
-        with open("{}/val_performances.txt".format(operator+'_'+version),'r') as file:
-            val_performances=eval(file.read())
-        print("loaded: ",list_models[max_epoch])
+        with open("{}/train_performances.txt".format(operator + '_' + version), 'r') as file:
+            train_performances = eval(file.read())
+        with open("{}/val_performances.txt".format(operator + '_' + version), 'r') as file:
+            val_performances = eval(file.read())
+        print("loaded: ", list_models[max_epoch])
     except:
         print("No saved models!")
 
@@ -222,85 +224,91 @@ for param in model.parameters():
     num_params += param.numel()
 print("Num parameters {}".format(num_params))
 model.cuda()
-#fixed_noise_ = torch.FloatTensor(batch_size, 1, 100).normal_(0, 1)
-#fixed_noise_ = fixed_noise_.cuda()
-
-for epoch in range(init_epoch,init_epoch+num_epoch):
+for epoch in range(init_epoch, init_epoch + num_epoch):
     model.train()
     loss_value = 0.0
     loss_bce = 0.0
     loss_kld = 0.0
-    L1_loss=0
+    L1_loss = 0
     # Train
     for j in range(len(train_data) // batch_size):
-        inputs, L, Di, DiA= sample_batch(train_data)
+        inputs, L, Di, DiA = sample_batch(train_data)
         if operator == "lap":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L)
         if operator == "dirac":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, DiA, mean_shape, mean_Di, mean_DiA)
         if operator == "simple_dirac":
-            recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, Di.transpose(1, 0), mean_shape, mean_simple_Di,mean_simple_Di.transpose(1, 0))
-        BCE, KLD = loss_function(recon_mu, recon_logvar,  inputs, z, mu, logvar)
+            recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, Di.transpose(1, 0), mean_shape, mean_simple_Di,
+                                                          mean_simple_Di.transpose(1, 0))
+        BCE, KLD = loss_function(recon_mu, recon_logvar, inputs, z, mu, logvar)
         loss_bce, loss_kld = loss_bce + BCE.item(), loss_kld + KLD.item()
-        L1_error=L1_loss_function(inputs,recon_mu)
+        L1_error = L1_loss_function(inputs, recon_mu)
         L1_loss += L1_error.item()
-        loss = L1_error+ 1/1000*KLD# * min(epoch/100.0, 1)
-        #loss = BCE*(1-epoch/1000) +L1_error*(epoch/1000)+ KLD * min(epoch/100.0, 1)
+        if loss_function == 'L1':
+            loss = L1_error + 1 / 1000 * KLD
+        elif loss_function == 'ELBO':
+            loss = BCE + KLD * min(epoch / 100.0, 1)
+        elif loss_function == 'mixed_loss':
+            loss = BCE * (1 - epoch / 1000) + L1_error * (epoch / 1000) + KLD * min(epoch / 100.0, 1)
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         loss_value += loss.item()
-    loss_avg=loss_value / (len(train_data) // batch_size)
-    info_loss="Train epoch {}, L1 loss {}, recon {}, reg {}".format(epoch,
-                  L1_loss/ (len(train_data) // batch_size),
-                  loss_bce / (len(train_data) // batch_size),
-                  loss_kld / (len(train_data) // batch_size))
+    loss_avg = loss_value / (len(train_data) // batch_size)
+    info_loss = "Train epoch {}, L1 loss {}, recon {}, reg {}".format(epoch,
+                                                                      L1_loss / (len(train_data) // batch_size),
+                                                                      loss_bce / (len(train_data) // batch_size),
+                                                                      loss_kld / (len(train_data) // batch_size))
     train_performances.append(info_loss)
 
     # for param_group in optimizer.param_groups:
-  #  param_group['lr'] = initial_learning_rate*np.exp(-int(epoch/learning_factor))
+    #  param_group['lr'] = initial_learning_rate*np.exp(-int(epoch/learning_factor))
 
     model.eval()
     loss_value = 0.0
     loss_bce = 0.0
     loss_kld = 0.0
-    L1_loss=0
+    L1_loss = 0
 
     # Evaluate
     for j in range(len(val_data) // batch_size):
-        inputs, laplacian, Di, DiA= sample_batch(val_data)
+        inputs, laplacian, Di, DiA = sample_batch(val_data)
         if operator == "lap":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L)
         if operator == "dirac":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, DiA, mean_shape, mean_Di, mean_DiA)
         if operator == "simple_dirac":
-            recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, Di.transpose(1, 0), mean_shape, mean_simple_Di,mean_simple_Di.transpose(1, 0))
-        BCE, KLD = loss_function(recon_mu, recon_logvar,  inputs, z, mu, logvar)
+            recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, Di.transpose(1, 0), mean_shape, mean_simple_Di,
+                                                          mean_simple_Di.transpose(1, 0))
+        BCE, KLD = loss_function(recon_mu, recon_logvar, inputs, z, mu, logvar)
         loss_bce, loss_kld = loss_bce + BCE.item(), loss_kld + KLD.item()
-        L1_error=L1_loss_function(inputs,recon_mu)
+        L1_error = L1_loss_function(inputs, recon_mu)
         L1_loss += L1_error.item()
-        #loss = BCE*(1-epoch/1000) +L1_error*(epoch/1000)+ KLD * min(epoch/100.0, 1)
-        loss = L1_error+ 1/1000*KLD# * min(epoch/100.0, 1)
 
-    loss_avg=loss_value / (len(val_data) // batch_size)
-    info_loss="Val epoch {}, L1 loss {}, recon {}, reg {}".format(epoch,
-                  L1_loss/ (len(val_data) // batch_size),
-                  loss_bce / (len(val_data) // batch_size),
-                  loss_kld / (len(val_data) // batch_size))
+    loss_avg = loss_value / (len(val_data) // batch_size)
+    info_loss = "Val epoch {}, L1 loss {}, recon {}, reg {}".format(epoch,
+                                                                    L1_loss / (len(val_data) // batch_size),
+                                                                    loss_bce / (len(val_data) // batch_size),
+                                                                    loss_kld / (len(val_data) // batch_size))
     val_performances.append(info_loss)
 
-    if(epoch%50==0):
+    if (epoch % 50 == 0):
         model.eval()
-        torch.save(model.state_dict(), "{}/model_epoch{}.pt".format(operator+'_'+version,epoch))
-        torch.save(optimizer.state_dict(), "{}/optimizer_epoch{}.pt".format(operator+'_'+version,epoch))
-        with open("{}/train_performances.txt".format(operator+'_'+version),'w') as file:
+        torch.save(model.state_dict(), "{}/model_epoch{}.pt".format(operator + '_' + version, epoch))
+        torch.save(optimizer.state_dict(), "{}/optimizer_epoch{}.pt".format(operator + '_' + version, epoch))
+        with open("{}/train_performances.txt".format(operator + '_' + version), 'w') as file:
             file.write(str(train_performances))
-        with open("{}/val_performances.txt".format(operator+'_'+version),'w') as file:
+        with open("{}/val_performances.txt".format(operator + '_' + version), 'w') as file:
             file.write(str(val_performances))
-        minioClient.fput_object('coma', "{}/model_epoch{}.pt".format(operator+'_'+version,epoch), "{}/model_epoch{}.pt".format(operator+'_'+version,epoch))
-        minioClient.fput_object('coma', "{}/optimizer_epoch{}.pt".format(operator+'_'+version,epoch), "{}/optimizer_epoch{}.pt".format(operator+'_'+version,epoch))
-        minioClient.fput_object('coma', "{}/train_performances.txt".format(operator+'_'+version), "{}/train_performances.txt".format(operator+'_'+version))
-        minioClient.fput_object('coma', "{}/val_performances.txt".format(operator+'_'+version), "{}/val_performances.txt".format(operator+'_'+version))
+        minioClient.fput_object('coma', "{}/model_epoch{}.pt".format(operator + '_' + version, epoch),
+                                "{}/model_epoch{}.pt".format(operator + '_' + version, epoch))
+        minioClient.fput_object('coma', "{}/optimizer_epoch{}.pt".format(operator + '_' + version, epoch),
+                                "{}/optimizer_epoch{}.pt".format(operator + '_' + version, epoch))
+        minioClient.fput_object('coma', "{}/train_performances.txt".format(operator + '_' + version),
+                                "{}/train_performances.txt".format(operator + '_' + version))
+        minioClient.fput_object('coma', "{}/val_performances.txt".format(operator + '_' + version),
+                                "{}/val_performances.txt".format(operator + '_' + version))
 
 torch.cuda.empty_cache()
 
@@ -342,9 +350,7 @@ print("Euclidean std Error= ", euclidean_dist.std()())
 print("Euclidean Mean %Error= ", euclidean_error.mean())
 print("Euclidean std %Error= ", euclidean_error.var())
 
-np.save('{}/mus.npy'.format(operator+'_'+version),[mu.detach().cpu().numpy() for mu in mus])
-np.save('{}/label_mus.npy'.format(operator+'_'+version),label_mus)
-np.save('{}/recon_samples.npy'.format(operator+'_'+version),recon_mu.detach().cpu())
-np.save('{}/input_samples.npy'.format(operator+'_'+version),inputs.detach().cpu())
-
-
+np.save('{}/mus.npy'.format(operator + '_' + version), [mu.detach().cpu().numpy() for mu in mus])
+np.save('{}/label_mus.npy'.format(operator + '_' + version), label_mus)
+np.save('{}/recon_samples.npy'.format(operator + '_' + version), recon_mu.detach().cpu())
+np.save('{}/input_samples.npy'.format(operator + '_' + version), inputs.detach().cpu())
