@@ -49,7 +49,7 @@ parser.add_argument('--loss', default="ELBO",
                     help='ELBO | L1 | mixed')
 parser.add_argument('--version', default="hpc_temp")
 parser.add_argument('--load-version', type=int, default=1000, metavar='N',
-                    help="-1 don't load,0 most recent otherwise epoch")
+                    help="-1 don't load,0 most recent epoch")
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
@@ -85,13 +85,17 @@ def sample_batch(samples,train=True):
     DiA = []
     for b, ind in enumerate(indices):
         inputs[b] = torch.tensor(samples[ind]['V'])
-        laplacian.append(sp_sparse_to_pt_sparse(samples[ind]['L']))
+
+        if operator == "lap":
+            laplacian.append(sp_sparse_to_pt_sparse(samples[ind]['L']))
+        if operator == "lap_norm":
+            laplacian.append(sp_sparse_to_pt_sparse(samples[ind]['L_norm']))
         if operator == "dirac":
             Di.append(sp_sparse_to_pt_sparse(samples[ind]['Di'].tolist()))
             DiA.append(sp_sparse_to_pt_sparse(samples[ind]['DiA'].tolist()))
         if operator == "simple_dirac":
             Di.append(sp_sparse_to_pt_sparse(samples[ind]['Di'].tolist()))
-    if operator=="lap":
+    if operator=="lap" or operator == "lap_norm":
         laplacian = sparse_diag_cat(laplacian,num_vertices,num_vertices)
         return inputs.to(device), laplacian.to(device),None,None
 
@@ -185,7 +189,7 @@ for i, label in enumerate(labels):
         test_labels.append(label)
 
 
-if operator == "lap":
+if operator == "lap" or operator ==  'lap_norm':
     model = LapVAE(num_features, num_blocks_encoder, num_blocks_decoder, dim_latent)
 else:
     model = DirVAE(num_features, num_blocks_encoder, num_blocks_decoder, dim_latent)
