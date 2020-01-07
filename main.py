@@ -42,7 +42,7 @@ parser.add_argument('--dim-latent', type=int, default=8, metavar='N',
 parser.add_argument('--weight_decay', type=float, default=0.000001, metavar='N',
                     help='regulizer (default: 100)')
 parser.add_argument('--initial_learning_rate', type=float, default=0.01, metavar='N',
-                    help='learning rate (default: 0.01)')
+                    help='learning rate (default: 0.001)')
 parser.add_argument('--model', default="lap",
                     help='lap | lap_norm | dirac | simple_dirac')
 parser.add_argument('--loss', default="ELBO",
