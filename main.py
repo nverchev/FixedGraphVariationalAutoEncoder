@@ -49,7 +49,7 @@ parser.add_argument('--loss', default="ELBO",
                     help='ELBO | L1 | mixed')
 parser.add_argument('--version', default="hpc_temp")
 parser.add_argument('--load-version', type=int, default=1000, metavar='N',
-                    help="-1 don't load,0 most recent otherwise epoch")
+                    help="-1 don't load,0 most recent epoch")
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
