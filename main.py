@@ -44,7 +44,7 @@ parser.add_argument('--weight_decay', type=float, default=0.000001, metavar='N',
 parser.add_argument('--initial_learning_rate', type=float, default=0.01, metavar='N',
                     help='learning rate (default: 0.001)')
 parser.add_argument('--model', default="lap",
-                    help='lap | lap_norm | dirac | simple_dirac')
+                    help='lap | lap_norm | lap_adj | dirac | simple_dirac')
 parser.add_argument('--loss', default="ELBO",
                     help='ELBO | L1 | mixed')
 parser.add_argument('--version', default="hpc_temp")
@@ -69,14 +69,14 @@ loss_ = args.loss
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def sample_batch(samples,train=True):
+def sample_batch(samples, train=True):
     indices = []
     if train:
         for b in range(batch_size):
-          ind = np.random.randint(0, len(samples))
-          indices.append(ind)
+            ind = np.random.randint(0, len(samples))
+            indices.append(ind)
     else:
-        indices=list(range(len(samples)))
+        indices = list(range(len(samples)))
 
     inputs = torch.zeros(batch_size, num_vertices, 3)
     faces = torch.zeros(batch_size, num_faces, 3).long()
@@ -95,33 +95,35 @@ def sample_batch(samples,train=True):
             DiA.append(sp_sparse_to_pt_sparse(samples[ind]['DiA'].tolist()))
         if operator == "simple_dirac":
             Di.append(sp_sparse_to_pt_sparse(samples[ind]['Di'].tolist()))
-    if operator=="lap" or operator == "lap_norm":
-        laplacian = sparse_diag_cat(laplacian,num_vertices,num_vertices)
-        return inputs.to(device), laplacian.to(device),None,None
-
-    if operator== "dirac":
-        Di = sparse_diag_cat(Di, 4 *num_faces, 4 * num_vertices)
+    if operator == "lap" or operator == "lap_norm":
+        laplacian = sparse_diag_cat(laplacian, num_vertices, num_vertices)
+        return inputs.to(device), laplacian.to(device), None, None
+    if operator == "lap_adj":
+        Di = sparse_diag_cat(Di, 4 * num_faces, 4 * num_vertices)
+        return inputs.to(device), None, None, None
+    if operator == "dirac":
+        Di = sparse_diag_cat(Di, 4 * num_faces, 4 * num_vertices)
         DiA = sparse_diag_cat(DiA, 4 * num_vertices, 4 * num_faces)
         return inputs.to(device), None, Di.to(device), DiA.to(device)
-    if operator== "simple_dirac":
-        Di = sparse_diag_cat(Di, 4 *num_faces, 4 * num_vertices)
+    if operator == "simple_dirac":
+        Di = sparse_diag_cat(Di, 4 * num_faces, 4 * num_vertices)
         return inputs.to(device), None, Di.to(device), None
 
 
 data = []
 mean_shape = torch.tensor(np.load('mean_shape.npy', allow_pickle=True)).to(device)
 
-data=[]
+data = []
 labels = []
 
-path_list=sorted(glob.glob("../data_vo/*/V/*"))
+path_list = sorted(glob.glob("../data_vo/*/V/*"))
 path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/*/V/*")))
 path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/*/V/*")))
 path_list.extend(sorted(glob.glob("../scratch_kyukon/*/V/*")))
 path_list.extend(sorted(glob.glob("../scratch_phanpy/*/V/*")))
 for i, path in enumerate(path_list):
     for sample in np.load(path):
-        data=np.hstack([data,{'V':sample}])
+        data = np.hstack([data, {'V': sample}])
         labels.append(int(path.split('/')[-1][:2]))
 
 if operator == 'lap':
@@ -132,6 +134,10 @@ elif operator == 'lap_norm':
     operator_dir = 'L_norm'
     L_norm = sp_sparse_to_pt_sparse(np.load('mean_L_norm.npy', allow_pickle=True).tolist().astype('f4'))
     mean_L = sparse_diag_cat([L_norm for _ in range(batch_size)], num_vertices, num_vertices).to(device)
+elif operator == 'lap_norm':
+    operator_dir = 'L_norm'
+    L_adj = sp_sparse_to_pt_sparse(np.load('mean_L_norm.npy', allow_pickle=True).tolist().astype('f4'))
+    L_adj = sparse_diag_cat([L_adj for _ in range(batch_size)], num_vertices, num_vertices).to(device)
 elif operator == 'dirac':
     operator_dir = 'Di'
     Di = sp_sparse_to_pt_sparse(np.load('mean_Di.npy', allow_pickle=True).tolist().astype('f4'))
@@ -144,13 +150,11 @@ elif operator == 'simple_dirac':
     simple_Di = sp_sparse_to_pt_sparse(np.load('mean_simple_Di.npy', allow_pickle=True).tolist().astype('f4'))
     mean_simple_Di = sparse_diag_cat([simple_Di for _ in range(batch_size)], 4 * num_faces, 4 * num_vertices).to(device)
 
-
 path_list = sorted(glob.glob("../data_vo/*/" + operator_dir + "/*"))
 path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/*/" + operator_dir + "/*")))
 path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/*/" + operator_dir + "/*")))
 path_list.extend(sorted(glob.glob("../scratch_kyukon/*/" + operator_dir + "/*")))
 path_list.extend(sorted(glob.glob("../scratch_phanpy/*/" + operator_dir + "/*")))
-
 
 i = 0
 for path in path_list:
@@ -171,7 +175,6 @@ if operator == 'dirac':
             data[i]['DiA'] = sample.astype('f4')
             i += 1
 
-
 train_data = []
 val_data = []
 test_data = []
@@ -183,13 +186,12 @@ for i, sample in enumerate(data):
     else:
         train_data.append(sample)
 
-test_labels=[]
+test_labels = []
 for i, label in enumerate(labels):
     if i % 10 == 9:
         test_labels.append(label)
 
-
-if operator == "lap" or operator ==  'lap_norm':
+if operator == "lap" or operator == 'lap_norm' or operator == 'lap_adj':
     model = LapVAE(num_features, num_blocks_encoder, num_blocks_decoder, dim_latent)
 else:
     model = DirVAE(num_features, num_blocks_encoder, num_blocks_decoder, dim_latent)
@@ -241,6 +243,8 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
     # Train
     for j in range(len(train_data) // batch_size):
         inputs, L, Di, DiA = sample_batch(train_data)
+        if operator == "lap" or operator == "lap_adj":
+            recon_mu, recon_logvar, z, mu, logvar = model(inputs, L_adj, mean_shape, L_adj)
         if operator == "lap" or operator == "lap_norm":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L)
         if operator == "dirac":
@@ -282,6 +286,8 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
     # Evaluate
     for j in range(len(val_data) // batch_size):
         inputs, laplacian, Di, DiA = sample_batch(val_data)
+        if operator == "lap" or operator == "lap_adj":
+            recon_mu, recon_logvar, z, mu, logvar = model(inputs, L_adj, mean_shape, L_adj)
         if operator == "lap" or operator == "lap_norm":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L)
         if operator == "dirac":
@@ -340,6 +346,8 @@ for i in range(num_evaluation):
         label_batch.append(test_labels[s])
 
     inputs, laplacian, Di, DiA = sample_batch(batch, False)
+    if operator == "lap" or operator == "lap_adj":
+        recon_mu, recon_logvar, z, mu, logvar = model(inputs, L_adj, mean_shape, L_adj)
     if operator == "lap" or operator == "lap_norm":
         recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L)
     if operator == "dirac":
