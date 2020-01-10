@@ -99,7 +99,6 @@ def sample_batch(samples, train=True):
         laplacian = sparse_diag_cat(laplacian, num_vertices, num_vertices)
         return inputs.to(device), laplacian.to(device), None, None
     if operator == "lap_adj":
-        Di = sparse_diag_cat(Di, 4 * num_faces, 4 * num_vertices)
         return inputs.to(device), None, None, None
     if operator == "dirac":
         Di = sparse_diag_cat(Di, 4 * num_faces, 4 * num_vertices)
@@ -243,7 +242,7 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
     # Train
     for j in range(len(train_data) // batch_size):
         inputs, L, Di, DiA = sample_batch(train_data)
-        if operator == "lap" or operator == "lap_adj":
+        if  operator == "lap_adj":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, L_adj, mean_shape, L_adj)
         if operator == "lap" or operator == "lap_norm":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L)
@@ -286,7 +285,7 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
     # Evaluate
     for j in range(len(val_data) // batch_size):
         inputs, laplacian, Di, DiA = sample_batch(val_data)
-        if operator == "lap" or operator == "lap_adj":
+        if  operator == "lap_adj":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, L_adj, mean_shape, L_adj)
         if operator == "lap" or operator == "lap_norm":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L)
@@ -346,7 +345,7 @@ for i in range(num_evaluation):
         label_batch.append(test_labels[s])
 
     inputs, laplacian, Di, DiA = sample_batch(batch, False)
-    if operator == "lap" or operator == "lap_adj":
+    if operator == "lap_adj":
         recon_mu, recon_logvar, z, mu, logvar = model(inputs, L_adj, mean_shape, L_adj)
     if operator == "lap" or operator == "lap_norm":
         recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L)
