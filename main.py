@@ -329,7 +329,7 @@ import gc
 
 gc.collect()
 # @title test
-num_evaluation = 50
+num_evaluation = 500
 L1_error = np.zeros((num_evaluation))
 euclidean_error = np.zeros((num_evaluation))
 euclidean_dist = np.zeros((num_evaluation))
@@ -337,7 +337,7 @@ euclidean_dist = np.zeros((num_evaluation))
 mus = []
 label_mus = []
 for i in range(num_evaluation):
-    sampling = np.random.choice(len(test_data), 32)
+    sampling = np.random.choice(len(test_data), batch_size)
     batch = []
     label_batch = []
     for s in sampling:
