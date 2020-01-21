@@ -284,13 +284,13 @@ class DirEncoder(nn.Module):
 class DirDecoder(nn.Module):
     def __init__(self,num_features,num_blocks_decoder,dim_latent):
         super().__init__()
-        self.conv1 = GraphConv1x1(1, num_features, batch_norm=None)
         self.num_layers = num_blocks_decoder
         self.bn_conv2 = GraphConv1x1(num_features, num_features, batch_norm="pre")
         self.num_features=num_features
         self.fc_mu = GraphConv1x1(num_features, 3, batch_norm=None)
         self.fc_logvar = nn.Parameter(torch.zeros(1, 1, 1))
         self.conv_shape = GraphConv1x1(3, num_features, batch_norm=None)
+        self.conv_latent = GraphConv1x1(num_features, num_features, batch_norm=None)
         self.num_layers = num_blocks_decoder
         for i in range(self.num_layers):
             module = DirResNet(num_features)
