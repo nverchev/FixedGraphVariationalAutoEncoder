@@ -321,7 +321,6 @@ class DirDecoder(nn.Module):
 
 
 class DirVAE(nn.Module):
-
     def __init__(self,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent):
         super().__init__()
 
