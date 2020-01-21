@@ -336,9 +336,17 @@ class DirVAE(nn.Module):
             eps = torch.FloatTensor(std.size()).normal_()
         return eps.mul(std).add_(mu)
 
-    def forward(self, x, Di, DiA):
+    def forward(self, x, Di, DiA,mean_shape, mean_Di,mean_DiA):
         mu, logvar = self.encoder(x, Di, DiA)
 
         z = self.reparametrize(mu, logvar)
         recog_mu, recog_logvar = self.decoder(z, Di, DiA)
+        return recog_mu, recog_logvar, z, mu, logvar
+
+
+
+    def forward(self, x, L, mean_shape, mean_Di,mean_DiA ):
+        mu, logvar = self.encoder(x, L)
+        z = self.reparametrize(mu, logvar)
+        recog_mu, recog_logvar = self.decoder(z, mean_Di, mean_DiA, mean_shape)
         return recog_mu, recog_logvar, z, mu, logvar

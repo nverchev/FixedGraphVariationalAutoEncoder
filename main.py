@@ -91,10 +91,10 @@ def sample_batch(samples, train=True):
         if operator == "lap_norm":
             laplacian.append(sp_sparse_to_pt_sparse(samples[ind]['L_norm']))
         if operator == "dirac":
-            Di.append(sp_sparse_to_pt_sparse(samples[ind]['Di'].tolist()))
-            DiA.append(sp_sparse_to_pt_sparse(samples[ind]['DiA'].tolist()))
+            Di.append(sp_sparse_to_pt_sparse(samples[ind]['Di']))
+            DiA.append(sp_sparse_to_pt_sparse(samples[ind]['DiA']))
         if operator == "simple_dirac":
-            Di.append(sp_sparse_to_pt_sparse(samples[ind]['Di'].tolist()))
+            Di.append(sp_sparse_to_pt_sparse(samples[ind]['Di']))
     if operator == "lap" or operator == "lap_norm":
         laplacian = sparse_diag_cat(laplacian, num_vertices, num_vertices)
         return inputs.to(device), laplacian.to(device), None, None
