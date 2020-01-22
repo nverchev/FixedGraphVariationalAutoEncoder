@@ -163,13 +163,14 @@ for path in path_list:
         i += 1
 
 if operator == 'dirac':
-    path_list = sorted(glob.glob("../data_vo/Dia/*"))
+    path_list = sorted(glob.glob("../data_vo/*/DiA/*"))
     path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/*/DiA/*")))
     path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/*/DiA/*")))
     path_list.extend(sorted(glob.glob("../scratch_kyukon/*/DiA/*")))
     path_list.extend(sorted(glob.glob("../scratch_phanpy/*/DiA/*")))
     i = 0
     for path in path_list:
+        print(path)
         for sample in np.load(path):
             data[i]['DiA'] = sample.astype('f4')
             i += 1
