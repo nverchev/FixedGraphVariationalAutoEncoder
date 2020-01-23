@@ -273,6 +273,7 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
                                                                       loss_bce / (len(train_data) // batch_size),
                                                                       loss_kld / (len(train_data) // batch_size))
     train_performances.append(info_loss)
+    print(info_loss)
 
     # for param_group in optimizer.param_groups:
     #  param_group['lr'] = initial_learning_rate*np.exp(-int(epoch/learning_factor))
@@ -306,8 +307,8 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
                                                                     loss_bce / (len(val_data) // batch_size),
                                                                     loss_kld / (len(val_data) // batch_size))
     val_performances.append(info_loss)
-
-    if (epoch % 50 == 0):
+    print(info_loss)
+    if epoch % 50 == 0 or epoch == 1 :
         model.eval()
         torch.save(model.state_dict(), "{}/model_epoch{}.pt".format(operator + '_' + version, epoch))
         torch.save(optimizer.state_dict(), "{}/optimizer_epoch{}.pt".format(operator + '_' + version, epoch))
