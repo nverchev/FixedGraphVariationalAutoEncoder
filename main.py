@@ -108,7 +108,8 @@ def sample_batch(samples, train=True):
         Di = sparse_diag_cat(Di, 4 * num_faces, 4 * num_vertices)
         return inputs.to(device), None, Di.to(device), None
 
-
+with open("err.txt", 'w') as file:
+            file.write(str(1))
 data = []
 mean_shape = torch.tensor(np.load('mean_shape.npy', allow_pickle=True)).to(device)
 
@@ -154,7 +155,8 @@ path_list.extend(sorted(glob.glob("../scratch_kyukon_vo/*/" + operator_dir + "/*
 path_list.extend(sorted(glob.glob("../scratch_phanpy_vo/*/" + operator_dir + "/*")))
 path_list.extend(sorted(glob.glob("../scratch_kyukon/*/" + operator_dir + "/*")))
 path_list.extend(sorted(glob.glob("../scratch_phanpy/*/" + operator_dir + "/*")))
-
+with open("err.txt", 'w') as file:
+    file.write(str(2))
 i = 0
 for path in path_list:
     print(path)
@@ -174,7 +176,8 @@ if operator == 'dirac':
         for sample in np.load(path):
             data[i]['DiA'] = sample.astype('f4')
             i += 1
-
+with open("err.txt", 'w') as file:
+    file.write(str(3))
 train_data = []
 val_data = []
 test_data = []
@@ -200,7 +203,8 @@ init_epoch = 1
 train_performances = []
 val_performances = []
 optimizer = optim.Adam(model.parameters(), initial_learning_rate, weight_decay=weight_decay)
-
+with open("err.txt", 'w') as file:
+    file.write(str(4))
 try:
     os.mkdir(operator + '_' + version)
 except:
@@ -228,7 +232,8 @@ if load + 1:
         print("loaded: ", list_models[max_epoch])
     except:
         print("No saved models!")
-
+with open("err.txt", 'w') as file:
+    file.write(str(5))
 num_params = 0
 for param in model.parameters():
     num_params += param.numel()
@@ -256,6 +261,8 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
         loss_bce, loss_kld = loss_bce + BCE.item(), loss_kld + KLD.item()
         L1_error = L1_loss_function(inputs, recon_mu)
         L1_loss += L1_error.item()
+        with open("err.txt", 'w') as file:
+            file.write(str(6))
         if loss_ == 'L1':
             loss = L1_error + 1 / 1000 * KLD
         elif loss_ == 'ELBO':
@@ -274,7 +281,8 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
                                                                       loss_kld / (len(train_data) // batch_size))
     train_performances.append(info_loss)
     print(info_loss)
-
+    with open("err.txt", 'w') as file:
+        file.write(str(7))
     # for param_group in optimizer.param_groups:
     #  param_group['lr'] = initial_learning_rate*np.exp(-int(epoch/learning_factor))
 
@@ -308,7 +316,7 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
                                                                     loss_kld / (len(val_data) // batch_size))
     val_performances.append(info_loss)
     print(info_loss)
-    if epoch % 50 == 0 or epoch == 1 :
+    if epoch % 50 == 0 or epoch == 1:
         model.eval()
         torch.save(model.state_dict(), "{}/model_epoch{}.pt".format(operator + '_' + version, epoch))
         torch.save(optimizer.state_dict(), "{}/optimizer_epoch{}.pt".format(operator + '_' + version, epoch))
