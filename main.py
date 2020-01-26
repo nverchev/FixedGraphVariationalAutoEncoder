@@ -43,8 +43,8 @@ parser.add_argument('--weight_decay', type=float, default=0.000001, metavar='N',
                     help='regulizer (default: 100)')
 parser.add_argument('--initial_learning_rate', type=float, default=0.01, metavar='N',
                     help='learning rate (default: 0.001)')
-parser.add_argument('--model', default="lap",
-                    help='lap | lap_norm | lap_adj | dirac | simple_dirac')
+parser.add_argument('--model', default="lap_adj",
+                    help='lap | lap_norm | lap_old| lap_adj | dirac | simple_dirac')
 parser.add_argument('--loss', default="ELBO",
                     help='ELBO | L1 | mixed')
 parser.add_argument('--version', default="hpc_temp")
