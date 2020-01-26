@@ -167,14 +167,14 @@ class LapEncoder_old(nn.Module):
     def __init__(self,num_features,num_blocks_encoder,dim_latent):
         super().__init__()
 
-        self.conv1 = utils.GraphConv1x1(3, num_features, batch_norm=None)
+        self.conv1 = GraphConv1x1(3, num_features, batch_norm=None)
 
         self.num_layers = num_blocks_encoder
         for i in range(self.num_layers):
-            module = utils.LapResNet2(num_features)
+            module = LapResNet2(num_features)
             self.add_module("rn{}".format(i), module)
 
-        self.bn_conv2 = utils.GraphConv1x1(num_features, num_features, batch_norm="pre")
+        self.bn_conv2 = GraphConv1x1(num_features, num_features, batch_norm="pre")
         self.fc_mu = nn.Linear(num_features, dim_latent)
         self.fc_logvar = nn.Linear(num_features, dim_latent)
 
@@ -189,7 +189,7 @@ class LapEncoder_old(nn.Module):
         x = self.bn_conv2(x)
         x = F.elu(x)
 
-        x = utils.global_average(x).squeeze()
+        x = global_average(x).squeeze()
 
         return self.fc_mu(x), self.fc_logvar(x)
 
@@ -198,15 +198,15 @@ class LapDecoder_old(nn.Module):
     def __init__(self,num_features,num_blocks_decoder,dim_latent):
         super().__init__()
 
-        self.conv_inputs = utils.GraphConv1x1(dim_latent, num_features, batch_norm=None)
+        self.conv_inputs = GraphConv1x1(dim_latent, num_features, batch_norm=None)
         self.num_layers = num_blocks_decoder
         for i in range(self.num_layers):
-            module = utils.LapResNet2(num_features)
+            module = LapResNet2(num_features)
             self.add_module("rn{}".format(i), module)
 
-        self.bn_conv2 = utils.GraphConv1x1(num_features, num_features, batch_norm="pre")
+        self.bn_conv2 = GraphConv1x1(num_features, num_features, batch_norm="pre")
 
-        self.fc_mu = utils.GraphConv1x1(num_features, 3, batch_norm=None)
+        self.fc_mu = GraphConv1x1(num_features, 3, batch_norm=None)
         self.fc_logvar = nn.Parameter(torch.zeros(1, 1, 1))
 
     def forward(self, inputs, L):

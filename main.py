@@ -1,4 +1,4 @@
-from models import LapVAE, DirVAE
+from models import LapVAE, DirVAE, LapVAE_old
 from util import sparse_diag_cat, sp_sparse_to_pt_sparse
 from losses import *
 import torch
