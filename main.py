@@ -95,7 +95,7 @@ def sample_batch(samples, train=True):
             DiA.append(sp_sparse_to_pt_sparse(samples[ind]['DiA']))
         if operator == "simple_dirac":
             Di.append(sp_sparse_to_pt_sparse(samples[ind]['Di']))
-    if operator == "lap" or operator == "lap_norm":
+    if operator == "lap" or operator == "lap_norm" or operator == 'lap_old':
         laplacian = sparse_diag_cat(laplacian, num_vertices, num_vertices)
         return inputs.to(device), laplacian.to(device), None, None
     if operator == "lap_adj":
