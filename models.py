@@ -247,7 +247,7 @@ class LapVAE_old(nn.Module):
         z = self.reparametrize(mu, logvar)
 
         z_ = z.unsqueeze(1)
-        z_ = z_.repeat(3, x.size(1), 1)
+        z_ = z_.repeat(1, x.size(1), 1)
 
         recog_mu, recog_logvar = self.decoder(z_, L)
         return recog_mu, recog_logvar, z, mu, logvar
@@ -256,7 +256,7 @@ class LapEncoder(nn.Module):
     def __init__(self,num_features,num_blocks_encoder,dim_latent):
         super().__init__()
 
-        self.conv1 = GraphConv1x1(3, num_features, batch_norm=None)
+        self.conv1 = GraphConv1x1(1, num_features, batch_norm=None)
 
         self.num_layers = num_blocks_encoder
         for i in range(self.num_layers):
