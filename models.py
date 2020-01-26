@@ -171,7 +171,7 @@ class LapEncoder_old(nn.Module):
 
         self.num_layers = num_blocks_encoder
         for i in range(self.num_layers):
-            module = LapResNet2(num_features)
+            module = LapResNet(num_features)
             self.add_module("rn{}".format(i), module)
 
         self.bn_conv2 = GraphConv1x1(num_features, num_features, batch_norm="pre")
@@ -201,7 +201,7 @@ class LapDecoder_old(nn.Module):
         self.conv_inputs = GraphConv1x1(dim_latent, num_features, batch_norm=None)
         self.num_layers = num_blocks_decoder
         for i in range(self.num_layers):
-            module = LapResNet2(num_features)
+            module = LapResNet(num_features)
             self.add_module("rn{}".format(i), module)
 
         self.bn_conv2 = GraphConv1x1(num_features, num_features, batch_norm="pre")
