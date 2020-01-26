@@ -247,7 +247,7 @@ class LapVAE_old(nn.Module):
         z = self.reparametrize(mu, logvar)
 
         z_ = z.unsqueeze(1)
-        z_ = z_.repeat(3, flat_x.size(1), 1)
+        z_ = z_.repeat(3, x.size(1), 1)
 
         recog_mu, recog_logvar = self.decoder(z_, L)
         return recog_mu, recog_logvar, z, mu, logvar
