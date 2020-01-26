@@ -239,7 +239,6 @@ class LapVAE_old(nn.Module):
             eps = torch.cuda.FloatTensor(std.size()).normal_()
         else:
             eps = torch.FloatTensor(std.size()).normal_()
-        eps = Variable(eps)
         return eps.mul(std).add_(mu)
 
     def forward(self, x,  L):
