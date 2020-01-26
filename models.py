@@ -243,7 +243,7 @@ class LapVAE_old(nn.Module):
         return eps.mul(std).add_(mu)
 
     def forward(self, x,  L):
-        mu, logvar = self.encoder(x, L, mask)
+        mu, logvar = self.encoder(x, L)
 
         z = self.reparametrize(mu, logvar)
 
