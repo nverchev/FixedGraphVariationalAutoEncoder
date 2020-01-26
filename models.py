@@ -163,6 +163,97 @@ class QuatDirResNet(nn.Module):
         return v + v_out, f_out
 
 
+class LapEncoder_old(nn.Module):
+    def __init__(self,num_features,num_blocks_encoder,dim_latent):
+        super().__init__()
+
+        self.conv1 = utils.GraphConv1x1(3, num_features, batch_norm=None)
+
+        self.num_layers = num_blocks_encoder
+        for i in range(self.num_layers):
+            module = utils.LapResNet2(num_features)
+            self.add_module("rn{}".format(i), module)
+
+        self.bn_conv2 = utils.GraphConv1x1(num_features, num_features, batch_norm="pre")
+        self.fc_mu = nn.Linear(num_features, dim_latent)
+        self.fc_logvar = nn.Linear(num_features, dim_latent)
+
+    def forward(self, inputs, L):
+        _, num_nodes, _ = inputs.size()
+        x = self.conv1(inputs)
+
+        for i in range(self.num_layers):
+            x = self._modules['rn{}'.format(i)](L, x)
+
+        x = F.elu(x)
+        x = self.bn_conv2(x)
+        x = F.elu(x)
+
+        x = utils.global_average(x).squeeze()
+
+        return self.fc_mu(x), self.fc_logvar(x)
+
+
+class LapDecoder_old(nn.Module):
+    def __init__(self,num_features,num_blocks_decoder,dim_latent):
+        super().__init__()
+
+        self.conv_inputs = utils.GraphConv1x1(dim_latent, num_features, batch_norm=None)
+        self.num_layers = num_blocks_decoder
+        for i in range(self.num_layers):
+            module = utils.LapResNet2(num_features)
+            self.add_module("rn{}".format(i), module)
+
+        self.bn_conv2 = utils.GraphConv1x1(num_features, num_features, batch_norm="pre")
+
+        self.fc_mu = utils.GraphConv1x1(num_features, 3, batch_norm=None)
+        self.fc_logvar = nn.Parameter(torch.zeros(1, 1, 1))
+
+    def forward(self, inputs, L):
+        batch_size, num_nodes, _ = inputs.size()
+        x = self.conv_inputs(inputs)
+
+        for i in range(self.num_layers):
+            x = self._modules['rn{}'.format(i)](L, x)
+
+        x = F.elu(x)
+        x = self.bn_conv2(x)
+        x = F.elu(x)
+
+        mu = self.fc_mu(x)
+
+        y = self.fc_logvar.expand_as(mu).contiguous()
+
+        return mu + inputs, y
+
+class LapVAE_old(nn.Module):
+
+    def __init__(self,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent):
+        super().__init__()
+
+        self.encoder = LapEncoder_old(num_features,num_blocks_encoder,dim_latent)
+        self.decoder = LapDecoder_old(num_features,num_blocks_decoder,dim_latent)
+
+    def reparametrize(self, mu, logvar):
+        std = logvar.mul(0.5).exp_()
+        if mu.is_cuda:
+            eps = torch.cuda.FloatTensor(std.size()).normal_()
+        else:
+            eps = torch.FloatTensor(std.size()).normal_()
+        eps = Variable(eps)
+        return eps.mul(std).add_(mu)
+
+    def forward(self, x,  L):
+        mu, logvar = self.encoder(x, L, mask)
+
+        z = self.reparametrize(mu, logvar)
+
+        z_ = z.unsqueeze(1)
+        z_ = z_.repeat(3, flat_x.size(1), 1)
+
+        recog_mu, recog_logvar = self.decoder(z_, L)
+        return recog_mu, recog_logvar, z, mu, logvar
+
 class LapEncoder(nn.Module):
     def __init__(self,num_features,num_blocks_encoder,dim_latent):
         super().__init__()
