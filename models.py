@@ -225,7 +225,6 @@ class LapDecoder_old(nn.Module):
         y = self.fc_logvar.expand_as(mu).contiguous()
 
         return mu + inputs, y
-
 class LapVAE_old(nn.Module):
 
     def __init__(self,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent):

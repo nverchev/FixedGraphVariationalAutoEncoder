@@ -88,7 +88,7 @@ def sample_batch(samples, train=True):
 
         if operator == "lap":
             laplacian.append(sp_sparse_to_pt_sparse(samples[ind]['L']))
-        if operator == "lap_norm":
+        if operator == "lap_norm" or operator == 'lap_old':
             laplacian.append(sp_sparse_to_pt_sparse(samples[ind]['L_norm']))
         if operator == "dirac":
             Di.append(sp_sparse_to_pt_sparse(samples[ind]['Di']))
@@ -110,7 +110,7 @@ def sample_batch(samples, train=True):
 
 with open("err.txt", 'w') as file:
             file.write(str(1))
-data = []
+
 mean_shape = torch.tensor(np.load('mean_shape.npy', allow_pickle=True)).to(device)
 
 data = []
@@ -130,7 +130,7 @@ if operator == 'lap':
     operator_dir = 'L'
     L = sp_sparse_to_pt_sparse(np.load('mean_L.npy', allow_pickle=True).tolist().astype('f4'))
     mean_L = sparse_diag_cat([L for _ in range(batch_size)], num_vertices, num_vertices).to(device)
-elif operator == 'lap_norm':
+elif operator == 'lap_norm' or operator == 'lap_old':
     operator_dir = 'L_norm'
     L_norm = sp_sparse_to_pt_sparse(np.load('mean_L_norm.npy', allow_pickle=True).tolist().astype('f4'))
     mean_L = sparse_diag_cat([L_norm for _ in range(batch_size)], num_vertices, num_vertices).to(device)
@@ -196,6 +196,8 @@ for i, label in enumerate(labels):
 
 if operator == "lap" or operator == 'lap_norm' or operator == 'lap_adj':
     model = LapVAE(num_features, num_blocks_encoder, num_blocks_decoder, dim_latent)
+elif operator == 'lap_old':
+    model = LapVAE_old(num_features, num_blocks_encoder, num_blocks_decoder, dim_latent)
 else:
     model = DirVAE(num_features, num_blocks_encoder, num_blocks_decoder, dim_latent)
 
@@ -248,6 +250,8 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
     # Train
     for j in range(len(train_data) // batch_size):
         inputs, L, Di, DiA = sample_batch(train_data)
+        if  operator == "lap_old":
+            recon_mu, recon_logvar, z, mu, logvar = model(inputs, L)
         if  operator == "lap_adj":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, L_adj, mean_shape, L_adj)
         if operator == "lap" or operator == "lap_norm":
@@ -295,6 +299,8 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
     # Evaluate
     for j in range(len(val_data) // batch_size):
         inputs, laplacian, Di, DiA = sample_batch(val_data)
+        if  operator == "lap_old":
+            recon_mu, recon_logvar, z, mu, logvar = model(inputs, L)
         if  operator == "lap_adj":
             recon_mu, recon_logvar, z, mu, logvar = model(inputs, L_adj, mean_shape, L_adj)
         if operator == "lap" or operator == "lap_norm":
@@ -355,6 +361,8 @@ for i in range(num_evaluation):
         label_batch.append(test_labels[s])
 
     inputs, laplacian, Di, DiA = sample_batch(batch, False)
+    if operator == "lap_old":
+        recon_mu, recon_logvar, z, mu, logvar = model(inputs, L)
     if operator == "lap_adj":
         recon_mu, recon_logvar, z, mu, logvar = model(inputs, L_adj, mean_shape, L_adj)
     if operator == "lap" or operator == "lap_norm":
