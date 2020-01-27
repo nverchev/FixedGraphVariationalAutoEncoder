@@ -251,7 +251,7 @@ class LapVAE_old(nn.Module):
             z = mu
 
         z_ = self.dense(z)
-        z_ = z_.unsqueeze(1)
+        z_ = z_.unsqueeze(2)
 
         recog_mu, recog_logvar = self.decoder(z_, L)
         return recog_mu, recog_logvar, z, mu, logvar
