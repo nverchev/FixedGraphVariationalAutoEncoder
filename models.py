@@ -198,7 +198,7 @@ class LapDecoder_old(nn.Module):
     def __init__(self,num_features,num_blocks_decoder,dim_latent):
         super().__init__()
 
-        self.conv_inputs = GraphConv1x1(dim_latent, num_features, batch_norm=None)
+        self.conv_inputs = GraphConv1x1(1, num_features, batch_norm=None)
         self.num_layers = num_blocks_decoder
         for i in range(self.num_layers):
             module = LapResNet(num_features)
@@ -227,11 +227,12 @@ class LapDecoder_old(nn.Module):
         return mu , y
 class LapVAE_old(nn.Module):
 
-    def __init__(self,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent):
+    def __init__(self,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent,eval=False):
         super().__init__()
 
         self.encoder = LapEncoder_old(num_features,num_blocks_encoder,dim_latent)
         self.decoder = LapDecoder_old(num_features,num_blocks_decoder,dim_latent)
+        self.dense = nn.Linear(dim_latent, num_vertices)
 
     def reparametrize(self, mu, logvar):
         std = logvar.mul(0.5).exp_()
@@ -244,10 +245,13 @@ class LapVAE_old(nn.Module):
     def forward(self, x,  L):
         mu, logvar = self.encoder(x, L)
 
-        z = self.reparametrize(mu, logvar)
+        if eval:
+            z = self.reparametrize(mu, logvar)
+        else:
+            z = mu
 
-        z_ = z.unsqueeze(1)
-        z_ = z_.repeat(1, x.size(1), 1)
+        z_ = self.dense(z)
+        z_ = z_.unsqueeze(1)
 
         recog_mu, recog_logvar = self.decoder(z_, L)
         return recog_mu, recog_logvar, z, mu, logvar
@@ -256,7 +260,7 @@ class LapEncoder(nn.Module):
     def __init__(self,num_features,num_blocks_encoder,dim_latent):
         super().__init__()
 
-        self.conv1 = GraphConv1x1(1, num_features, batch_norm=None)
+        self.conv1 = GraphConv1x1(3, num_features, batch_norm=None)
 
         self.num_layers = num_blocks_encoder
         for i in range(self.num_layers):
@@ -317,7 +321,7 @@ class LapDecoder(nn.Module):
 
 class LapVAE(nn.Module):
 
-    def __init__(self,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent):
+    def __init__(self,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent,eval=False):
         super().__init__()
         self.encoder = LapEncoder(num_features,num_blocks_encoder,dim_latent)
         self.decoder = LapDecoder(num_features,num_blocks_decoder,dim_latent)
@@ -332,7 +336,10 @@ class LapVAE(nn.Module):
 
     def forward(self, x, L, mean_shape, mean_L):
         mu, logvar = self.encoder(x, L)
-        z = self.reparametrize(mu, logvar)
+        if eval:
+            z = self.reparametrize(mu, logvar)
+        else:
+            z=mu
         recog_mu, recog_logvar = self.decoder(z, mean_L, mean_shape)
         return recog_mu, recog_logvar, z, mu, logvar
 
@@ -410,7 +417,7 @@ class DirDecoder(nn.Module):
 
 
 class DirVAE(nn.Module):
-    def __init__(self,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent):
+    def __init__(self,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent,eval=False):
         super().__init__()
 
         self.encoder = DirEncoder(num_features,num_blocks_encoder,dim_latent)
@@ -426,6 +433,9 @@ class DirVAE(nn.Module):
 
     def forward(self, x, Di, DiA,mean_shape, mean_Di,mean_DiA):
         mu, logvar = self.encoder(x, Di, DiA)
-        z = self.reparametrize(mu, logvar)
+        if eval:
+            z = self.reparametrize(mu, logvar)
+        else:
+            z=mu
         recog_mu, recog_logvar = self.decoder(z, mean_Di, mean_DiA, mean_shape)
         return recog_mu, recog_logvar, z, mu, logvar
