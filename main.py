@@ -349,11 +349,13 @@ num_evaluation = 500
 L1_error = np.zeros((num_evaluation))
 euclidean_error = np.zeros((num_evaluation))
 euclidean_dist = np.zeros((num_evaluation))
+test_labels = []
+
 
 mus = []
 label_mus = []
-for i in range(num_evaluation):
-    sampling = np.random.choice(len(test_data), batch_size)
+for i in range(len(test_data)//batch_size):
+    sampling = np.array(list(range(i*batch_size,(i+1)*batch_size)))
     batch = []
     label_batch = []
     for s in sampling:
@@ -383,7 +385,10 @@ print("Euclidean std Error= ", euclidean_dist.std())
 print("Euclidean Mean %Error= ", euclidean_error.mean())
 print("Euclidean std %Error= ", euclidean_error.var())
 
-np.save('{}/mus.npy'.format(operator + '_' + version), [mu.detach().cpu().numpy() for mu in mus])
+np.save('{}/mus.npy'.format(operator + '_' + version), [mu.numpy() for mu in mus])
 np.save('{}/label_mus.npy'.format(operator + '_' + version), label_mus)
 np.save('{}/recon_samples.npy'.format(operator + '_' + version), recon_mu.detach().cpu())
 np.save('{}/input_samples.npy'.format(operator + '_' + version), inputs.detach().cpu())
+files=['{}/mus.npy'.format(operator + '_' + version),'{}/label_mus.npy'.format(operator + '_' + version), '{}/recon_samples.npy'.format(operator + '_' + version), '{}/input_samples.npy'.format(operator + '_' + version)]
+for file in files:
+    minioClient.fput_object('coma', file,file)
