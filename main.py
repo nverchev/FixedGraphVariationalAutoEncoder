@@ -135,6 +135,7 @@ elif operator == 'lap_norm' or operator == 'lap_old':
     L_norm = sp_sparse_to_pt_sparse(np.load('mean_L_norm.npy', allow_pickle=True).tolist().astype('f4'))
     mean_L = sparse_diag_cat([L_norm for _ in range(batch_size)], num_vertices, num_vertices).to(device)
 elif operator == 'lap_adj':
+    operator_dir=''
     L_adj = sp_sparse_to_pt_sparse(np.load('mean_L_norm.npy', allow_pickle=True).tolist().astype('f4'))
     L_adj = sparse_diag_cat([L_adj for _ in range(batch_size)], num_vertices, num_vertices).to(device)
 elif operator == 'dirac':
