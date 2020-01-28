@@ -362,16 +362,16 @@ for i in range(num_evaluation):
 
     inputs, laplacian, Di, DiA = sample_batch(batch, False)
     if operator == "lap_old":
-        recon_mu, recon_logvar, z, mu, logvar = model(inputs, L,eval=True)
+        recon_mu, recon_logvar, z, mu, logvar = model(inputs, L,eval=False)
     if operator == "lap_adj":
-        recon_mu, recon_logvar, z, mu, logvar = model(inputs, L_adj, mean_shape, L_adj,eval=True)
+        recon_mu, recon_logvar, z, mu, logvar = model(inputs, L_adj, mean_shape, L_adj,eval=False)
     if operator == "lap" or operator == "lap_norm":
-        recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L,eval=True)
+        recon_mu, recon_logvar, z, mu, logvar = model(inputs, L, mean_shape, mean_L,eval=False)
     if operator == "dirac":
-        recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, DiA, mean_shape, mean_Di, mean_DiA,eval=True)
+        recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, DiA, mean_shape, mean_Di, mean_DiA,eval=False)
     if operator == "simple_dirac":
         recon_mu, recon_logvar, z, mu, logvar = model(inputs, Di, Di.transpose(1, 0), mean_shape, mean_simple_Di,
-                                                      mean_simple_Di.transpose(1, 0),eval=True)
+                                                      mean_simple_Di.transpose(1, 0),eval=False)
 
     mus.append(mu.detach().cpu())
     label_mus.append(label_batch)
