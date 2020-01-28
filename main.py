@@ -348,14 +348,14 @@ for i, label in enumerate(labels):
         test_labels.append(label)
 gc.collect()
 # @title test
-num_evaluation = 500
+num_evaluation = len(test_data)//batch_size
 L1_error = np.zeros((num_evaluation))
 euclidean_error = np.zeros((num_evaluation))
 euclidean_dist = np.zeros((num_evaluation))
 
 mus = []
 label_mus = []
-for i in range(len(test_data)//batch_size):
+for i in range(num_evaluation):
     sampling = np.array(list(range(i*batch_size,(i+1)*batch_size)))
     batch = []
     label_batch = []
@@ -393,3 +393,4 @@ np.save('{}/input_samples.npy'.format(operator + '_' + version), inputs.detach()
 files=['{}/mus.npy'.format(operator + '_' + version),'{}/label_mus.npy'.format(operator + '_' + version), '{}/recon_samples.npy'.format(operator + '_' + version), '{}/input_samples.npy'.format(operator + '_' + version)]
 for file in files:
     minioClient.fput_object('coma', file,file)
+

@@ -15,6 +15,8 @@ def loss_function(recon_mu, recon_logvar, x, z, mu, logvar):
     return BCE, KLD
 
 def L1_loss_function(recon_mu,x):
+    x = x.view(x.size(0), -1)
+    recon_mu = recon_mu.view(x.size(0), -1)
     return torch.abs(recon_mu-x).sum(1).mean()
     #return torch.abs(recon_mu-x).mean()
 def euclidean(x, y):
