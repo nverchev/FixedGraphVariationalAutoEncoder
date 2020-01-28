@@ -342,15 +342,16 @@ for epoch in range(init_epoch, init_epoch + num_epoch):
 torch.cuda.empty_cache()
 
 import gc
-
+test_labels = []
+for i, label in enumerate(labels):
+    if i % 10 == 9:
+        test_labels.append(label)
 gc.collect()
 # @title test
 num_evaluation = 500
 L1_error = np.zeros((num_evaluation))
 euclidean_error = np.zeros((num_evaluation))
 euclidean_dist = np.zeros((num_evaluation))
-test_labels = []
-
 
 mus = []
 label_mus = []
