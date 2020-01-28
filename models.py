@@ -233,7 +233,7 @@ class LapVAE_old(nn.Module):
         self.encoder = LapEncoder_old(num_features,num_blocks_encoder,dim_latent)
         self.decoder = LapDecoder_old(num_features,num_blocks_decoder,dim_latent)
         self.dense = nn.Linear(dim_latent, num_vertices)
-
+        self.eval=eval
     def reparametrize(self, mu, logvar):
         std = logvar.mul(0.5).exp_()
         if mu.is_cuda:
@@ -321,7 +321,7 @@ class LapDecoder(nn.Module):
 
 class LapVAE(nn.Module):
 
-    def __init__(self,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent,eval=False):
+    def __init__(self,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent):
         super().__init__()
         self.encoder = LapEncoder(num_features,num_blocks_encoder,dim_latent)
         self.decoder = LapDecoder(num_features,num_blocks_decoder,dim_latent)
@@ -334,7 +334,7 @@ class LapVAE(nn.Module):
             eps = torch.FloatTensor(std.size()).normal_()
         return eps.mul(std).add_(mu)
 
-    def forward(self, x, L, mean_shape, mean_L):
+    def forward(self, x, L, mean_shape, mean_L,eval=False):
         mu, logvar = self.encoder(x, L)
         if eval:
             z = self.reparametrize(mu, logvar)
@@ -417,7 +417,7 @@ class DirDecoder(nn.Module):
 
 
 class DirVAE(nn.Module):
-    def __init__(self,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent,eval=False):
+    def __init__(self,num_features,num_blocks_encoder,num_blocks_decoder,dim_latent):
         super().__init__()
 
         self.encoder = DirEncoder(num_features,num_blocks_encoder,dim_latent)
@@ -431,7 +431,7 @@ class DirVAE(nn.Module):
             eps = torch.FloatTensor(std.size()).normal_()
         return eps.mul(std).add_(mu)
 
-    def forward(self, x, Di, DiA,mean_shape, mean_Di,mean_DiA):
+    def forward(self, x, Di, DiA,mean_shape, mean_Di,mean_DiA,eval=False):
         mu, logvar = self.encoder(x, Di, DiA)
         if eval:
             z = self.reparametrize(mu, logvar)
