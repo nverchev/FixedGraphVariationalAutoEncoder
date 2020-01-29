@@ -11,9 +11,9 @@ class GraphConv1x1(nn.Module):
         self.num_outputs = num_outputs
         self.batch_norm = batch_norm
         if self.batch_norm == "pre":
-            self.bn = nn.BatchNorm1d(num_inputs, track_running_stats=False)
+            self.bn = nn.BatchNorm1d(num_inputs, track_running_stats=True)
         if self.batch_norm == "post":
-            self.bn = nn.BatchNorm1d(num_outputs, track_running_stats=False)
+            self.bn = nn.BatchNorm1d(num_outputs, track_running_stats=True)
         self.fc = nn.Linear(num_inputs, num_outputs, bias=True)
 
     def forward(self, x):
