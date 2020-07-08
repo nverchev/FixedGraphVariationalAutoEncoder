@@ -19,6 +19,7 @@ def L1_loss_function(recon_mu,x):
     recon_mu = recon_mu.view(x.size(0), -1)
     return torch.abs(recon_mu-x).sum(1).mean()
     #return torch.abs(recon_mu-x).mean()
+
 def euclidean(x, y):
     x = x.cpu().detach().numpy()
     y = y.cpu().detach().numpy()
